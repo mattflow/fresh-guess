@@ -1,15 +1,15 @@
 import { type NextPage } from "next";
 import algoliasearch from "algoliasearch/lite";
 import {
-  Hits,
   InstantSearch,
   SearchBox,
+  useInfiniteHits,
   useInstantSearch,
 } from "react-instantsearch-hooks-web";
 import { MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 
 import { api } from "../utils/api";
-import React, { type ComponentProps } from "react";
+import { useEffect, useRef } from "react";
 
 type Hit = {
   title: string;
@@ -22,9 +22,7 @@ type Hit = {
     criticsIconUrl?: string;
   };
 };
-const Results = Hits<Hit>;
-type Results = typeof Results;
-const HitComponent: ComponentProps<Results>["hitComponent"] = ({ hit }) => {
+const Result = ({ hit }: { hit: Hit }) => {
   const audienceScore = hit.rottenTomatoes?.audienceScore
     ? hit.rottenTomatoes.audienceScore.toString()
     : "--";
@@ -45,7 +43,7 @@ const HitComponent: ComponentProps<Results>["hitComponent"] = ({ hit }) => {
           className="h-auto w-20 shrink-0 rounded shadow"
         />
         <div className="truncate">
-          <h1 className="truncate text-indigo-600">{hit.title}</h1>
+          <h1 className="truncate">{hit.title}</h1>
           <h2 className="text-sm text-gray-400">{hit.releaseYear}</h2>
         </div>
       </div>
@@ -65,6 +63,41 @@ const HitComponent: ComponentProps<Results>["hitComponent"] = ({ hit }) => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+const Results = () => {
+  const { hits, isLastPage, showMore } = useInfiniteHits<Hit>();
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    if (sentinelRef.current !== null) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isLastPage) {
+            showMore();
+          }
+        });
+      });
+
+      observer.observe(sentinelRef.current);
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, [isLastPage, showMore]);
+
+  return (
+    <div className="max-h-[38rem] overflow-y-scroll rounded shadow">
+      <ul className="divide-y divide-gray-200">
+        {hits.map((hit) => (
+          <li key={hit.objectID}>
+            <Result hit={hit} />
+          </li>
+        ))}
+        <li ref={sentinelRef} aria-hidden="true" />
+      </ul>
     </div>
   );
 };
@@ -104,17 +137,12 @@ const Home: NextPage = () => {
                   "block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm",
                 reset: "hidden",
                 submit: "hidden",
+                loadingIndicator: "hidden",
               }}
             />
           </div>
           <EmptyQueryBoundary>
-            <Results
-              classNames={{
-                root: "shadow rounded",
-                list: "divide-y divide-gray-200",
-              }}
-              hitComponent={HitComponent}
-            />
+            <Results />
           </EmptyQueryBoundary>
         </InstantSearch>
       </div>
