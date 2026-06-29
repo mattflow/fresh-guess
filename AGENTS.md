@@ -82,7 +82,7 @@ The original starter's demo design system (ocean theme, `demo-*`/`island-*` clas
 - `SelectedMovie` (persisted to `localStorage`) carries no score. Don't add one. Peeked scores live only in transient React state.
 
 ### Vite config note
-`playwright` (and its optional native `fsevents`) are excluded from Vite's client dep optimizer and externalized for SSR in `vite.config.ts` — otherwise Vite tries to bundle the native `.node` binary and dev fails.
+`playwright` (and its optional native `fsevents`) are excluded from Vite's client dep optimizer and externalized for **both SSR and Nitro** in `vite.config.ts` — otherwise the native `.node` binary gets bundled and dev/build fail. The `nitro()` plugin is also registered there for the production build (see **Deployment**).
 
 ### Stack & integrations
 
@@ -126,7 +126,7 @@ tsr.config.json       # { "target": "react" }
 pnpm dev              # vite dev --port 3000
 pnpm build            # production build (client + SSR)
 pnpm preview          # preview the production build
-pnpm start            # production server: vite preview on 0.0.0.0:${PORT:-3000} (used by Docker)
+pnpm start            # production server: node .output/server/index.mjs (after build; used by Docker)
 pnpm test             # vitest run
 pnpm generate-routes  # tsr generate (regenerate routeTree.gen.ts)
 ```
@@ -145,13 +145,17 @@ They're read **inside** the server handler (`getAlgoliaCredentials`), per the ex
 
 ### Deployment
 
-**Docker / Coolify (configured).** A root `Dockerfile` + `.dockerignore` build a Node 22 image that serves the production build with `pnpm start` (`vite preview --host 0.0.0.0 --port ${PORT:-3000}`). `vite preview` runs the SSR server **and** the server functions (verified by `scripts/e2e.mjs` against `pnpm start`). The image also installs Chromium (`playwright install --with-deps chromium`) so the RT key-scrape self-heals when RT rotates keys; Chromium is launched with `--no-sandbox` (required as root in a container).
+**Production server = Nitro.** `vite.config.ts` includes the `nitro()` plugin (from `nitro/vite`, package `nitro-nightly` per the deployment skill), so `pnpm build` emits a self-contained Node server at **`.output/server/index.mjs`**. Run it with `pnpm start` (`node .output/server/index.mjs`). It listens on all interfaces, honors `$PORT` (default 3000), and has **no host allowlist** — unlike `vite preview`, which is a dev tool and blocks unknown hosts (that's the "Blocked request… not allowed" error). Nitro traces Playwright into `.output/server/node_modules`, so the dynamic `import('playwright')` resolves at runtime. Playwright is externalized for Nitro in `vite.config.ts`.
 
-In **Coolify**: set Build Pack = **Dockerfile**, exposed **port = 3000**, health check path `/`. No persistent storage needed (game state is client-side). Optionally set the `RT_ALGOLIA_*` env vars to skip Playwright (then the browser is unused). Run command/CMD is baked in (`pnpm start`).
+**Docker / Coolify (configured + verified in real Docker).** Multi-stage `Dockerfile` (+ `.dockerignore`):
+- *build stage* — full deps + `pnpm build` → `.output`.
+- *runtime stage* — Node 22 + the copied `.output` + Chromium only (no devDeps, no vite). Chromium is installed via `npx playwright@<ver> install --with-deps chromium` to `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright` so the traced `playwright-core` finds it; launched with `--no-sandbox` (required as root in a container). The RT key-scrape self-heals when RT rotates keys. ~2.2 GB image.
 
-- Production run command: `pnpm start` (honors `$PORT`, binds `0.0.0.0`). The build is not Nitro-based, so `node dist/server/server.js` does **not** self-listen — use `vite preview`/`pnpm start`.
-- The image keeps devDependencies because `vite`/`vite preview` are dev tooling. `pnpm-workspace.yaml` holds `onlyBuiltDependencies` (esbuild, lightningcss) so they build on the non-interactive Docker install.
-- **Other targets:** the runtime key-scrape needs Chromium, which serverless/edge (Cloudflare/Vercel edge) don't ship — set `RT_ALGOLIA_*` there instead. For a fully production-grade Node server you can add the Nitro plugin (`node .output/server/index.mjs`); load the `start-core/deployment` skill. Not done here to avoid the nitro-nightly dependency.
+In **Coolify**: Build Pack = **Dockerfile**, exposed **port = 3000**, health check path `/`. No persistent storage (game state is client-side). Optionally set `RT_ALGOLIA_*` env vars to skip Playwright (browser then unused). CMD is baked in (`node .output/server/index.mjs`).
+
+Verified end-to-end inside the built container: serves `/`, accepts an arbitrary `Host` header, `scripts/e2e.mjs` passes (server functions work), the in-container Playwright RT scrape reads live keys, and the HEALTHCHECK reports `healthy`.
+
+- **Serverless/edge** (Cloudflare/Vercel edge) can't ship Chromium — set `RT_ALGOLIA_*` there. `pnpm-workspace.yaml` holds `onlyBuiltDependencies` (esbuild, lightningcss) so they build on the non-interactive Docker install.
 
 ### Key architectural decisions
 

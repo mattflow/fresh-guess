@@ -14,7 +14,7 @@
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0 --port ${PORT:-3000}",
+    "start": "node .output/server/index.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -44,6 +44,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
     "jsdom": "^28.1.0",
+    "nitro": "npm:nitro-nightly@3.0.1-20260628-090458-3df69609",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.5"
