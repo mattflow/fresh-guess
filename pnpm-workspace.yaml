@@ -1,0 +1,6 @@
+# pnpm 11 reads build-script approvals from here (no longer from package.json's
+# "pnpm" field). These native deps need their build scripts to run on install —
+# important for non-interactive installs like the Docker build.
+onlyBuiltDependencies:
+  - esbuild
+  - lightningcss

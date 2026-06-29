@@ -1,0 +1,24 @@
+# Keep the build context small + force a clean install/build inside the image.
+node_modules
+dist
+.output
+.nitro
+.tanstack
+.wrangler
+.vinxi
+
+# VCS / editor / OS
+.git
+.gitignore
+.vscode
+.idea
+**/.DS_Store
+
+# Local env + logs (never bake secrets into the image)
+.env
+.env.*
+!.env.example
+*.log
+
+# Dev-only tooling not needed at runtime
+scripts

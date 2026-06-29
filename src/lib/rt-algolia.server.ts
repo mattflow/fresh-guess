@@ -56,7 +56,13 @@ export async function getAlgoliaCredentials(forceRefresh = false): Promise<Crede
 
 async function scrapeCredentials(): Promise<{ aId: string; sId: string }> {
   const { chromium } = await import('playwright')
-  const browser = await chromium.launch({ headless: true })
+  // --no-sandbox / --disable-dev-shm-usage are required to launch Chromium as
+  // root in a container (e.g. the Docker/Coolify image). Safe here — we only
+  // load rottentomatoes.com to read its public Algolia keys.
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  })
   try {
     const page = await browser.newPage()
     await page.goto('https://www.rottentomatoes.com', {
