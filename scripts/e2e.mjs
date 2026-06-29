@@ -19,7 +19,7 @@ const settle = () => page.waitForTimeout(1200)
 
 try {
   // --- Setup: register two players ---
-  await page.goto(`${BASE}/play`, { waitUntil: 'domcontentloaded' })
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
   await settle()
   await page.getByPlaceholder('Player 1 name').fill('Ada')
   await page.getByPlaceholder('Player 2 name').fill('Linus')
@@ -36,9 +36,9 @@ try {
       await search.fill('')
       await search.fill(q)
       // wait for at least one result row
-      await page.locator('.demo-list-item').first().waitFor({ timeout: 15000 })
+      await page.locator('button.fg-card').first().waitFor({ timeout: 15000 })
       // click the first not-yet-picked result
-      const row = page.locator('.demo-list-item').first()
+      const row = page.locator('button.fg-card').first()
       await row.click()
     }
     // confirm 3 picks selected (tray shows Remove buttons)
@@ -66,12 +66,12 @@ try {
 
   // --- Reveal ---
   await page.getByText(/wins!|It's a tie!/).waitFor({ timeout: 20000 })
-  const heading = (await page.locator('.display-title').first().innerText()).replace(/\n/g, ' ')
+  const heading = (await page.locator('h2').first().innerText()).replace(/\n/g, ' ')
   log('✓ reveal heading:', heading)
 
   // Read each player's total + that scores are shown as percentages
-  const totals = await page.locator('.demo-panel .text-2xl').allInnerTexts()
-  const pct = await page.locator('.demo-pill').filter({ hasText: '%' }).count()
+  const totals = await page.locator('.fg-card .text-2xl').allInnerTexts()
+  const pct = await page.locator('.fg-pill').filter({ hasText: '%' }).count()
   log('  totals shown:', totals.join(', '))
   log('  score pills (%):', pct)
   if (pct < 6) fail(`expected >=6 score percentages at reveal, got ${pct}`)

@@ -13,20 +13,20 @@ export default function PassDevice({
   onReady: () => void
 }) {
   return (
-    <section className="island-shell rise-in flex flex-col items-center p-7 text-center sm:p-10">
-      <p className="island-kicker">
+    <section className="fg-rise flex min-h-[70vh] flex-col items-center justify-center text-center">
+      <p className="fg-kicker">
         Player {playerNumber} of {totalPlayers}
       </p>
-      <h2 className="display-title mt-2 text-3xl text-[var(--sea-ink)] sm:text-4xl">
+      <h2 className="mt-3 text-3xl font-extrabold tracking-tight">
         Pass the phone to
         <br />
-        {name}
+        <span className="text-[var(--color-splat)]">{name}</span>
       </h2>
-      <p className="demo-muted mt-3 max-w-sm text-sm">
-        Pick 3 movies whose Tomatometer scores add up as close to {TARGET} as you can — no
-        peeking at the scores. Everyone's reveal happens at the end.
+      <p className="mt-4 max-w-xs text-sm text-zinc-400">
+        Pick 3 movies whose Tomatometer scores add up as close to {TARGET} as you can — without
+        seeing the scores. Everyone reveals at the end.
       </p>
-      <button type="button" className="demo-button mt-6 px-8" onClick={onReady}>
+      <button type="button" className="fg-btn fg-btn-primary mt-7 px-8 py-4" onClick={onReady}>
         I'm {name} — start my turn
       </button>
     </section>

@@ -46,7 +46,7 @@ export default function MovieSearch({
   return (
     <div>
       <input
-        className="demo-input"
+        className="fg-input"
         type="search"
         placeholder="Search a movie title…"
         value={query}
@@ -55,14 +55,14 @@ export default function MovieSearch({
       />
 
       <div className="mt-3 flex flex-col gap-2">
-        {status === 'loading' && <p className="demo-muted text-sm">Searching…</p>}
+        {status === 'loading' && <p className="text-sm text-zinc-500">Searching…</p>}
         {status === 'error' && (
-          <p className="demo-alert demo-alert-danger text-sm">
+          <p className="rounded-lg bg-[#2a1a1a] px-3 py-2 text-sm text-[#f0a3a3]">
             Couldn't reach the movie database. Try again.
           </p>
         )}
         {status === 'done' && results.length === 0 && (
-          <p className="demo-muted text-sm">No scored movies match "{query.trim()}".</p>
+          <p className="text-sm text-zinc-500">No scored movies match "{query.trim()}".</p>
         )}
 
         {results.map((m) => {
@@ -71,23 +71,19 @@ export default function MovieSearch({
             <button
               key={m.objectID}
               type="button"
-              className="demo-list-item flex items-center gap-3 text-left disabled:opacity-50"
+              className="fg-card flex items-center gap-3 p-2.5 text-left disabled:opacity-40"
               disabled={!picked && isFull}
               onClick={() => onToggle(m)}
             >
               <Poster url={m.posterUrl} title={m.title} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold text-[var(--sea-ink)]">
-                  {m.title}
-                </span>
-                {m.year != null && (
-                  <span className="demo-muted block text-xs">{m.year}</span>
-                )}
+                <span className="block truncate font-semibold">{m.title}</span>
+                {m.year != null && <span className="block text-xs text-zinc-500">{m.year}</span>}
               </span>
               <span
                 className={
-                  'demo-pill shrink-0 ' +
-                  (picked ? 'border-[var(--lagoon-deep)] text-[var(--sea-ink)]' : '')
+                  'fg-pill shrink-0 ' +
+                  (picked ? 'bg-[var(--color-fresh)] text-black' : '')
                 }
               >
                 {picked ? '✓ Picked' : isFull ? 'Full' : '+ Pick'}
@@ -104,7 +100,7 @@ function Poster({ url, title }: { url?: string; title: string }) {
   if (!url) {
     return (
       <span
-        className="grid h-14 w-10 shrink-0 place-items-center rounded-md bg-[var(--chip-bg)] text-[var(--sea-ink-soft)]"
+        className="grid h-14 w-10 shrink-0 place-items-center rounded-md bg-[#222229] text-zinc-500"
         aria-hidden
       >
         🎬

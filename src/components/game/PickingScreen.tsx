@@ -36,61 +36,53 @@ export default function PickingScreen() {
   }
 
   return (
-    <section className="rise-in flex flex-col gap-5">
-      <header className="island-shell p-5">
-        <p className="island-kicker">
+    <section className="fg-rise flex flex-col gap-4">
+      <header>
+        <p className="fg-kicker">
           {player.name}'s turn · Player {idx + 1} of {state.players.length}
         </p>
-        <h2 className="display-title mt-1 text-2xl text-[var(--sea-ink)]">
+        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">
           Pick {PICKS_PER_PLAYER} movies for {TARGET}
         </h2>
-        <p className="demo-muted mt-1 text-sm">
+        <p className="mt-1 text-sm text-zinc-400">
           Scores stay hidden — go with your gut. {picks.length}/{PICKS_PER_PLAYER} chosen.
         </p>
       </header>
 
-      <div className="demo-panel">
-        <h3 className="demo-section-title">Your picks</h3>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          {Array.from({ length: PICKS_PER_PLAYER }).map((_, slot) => {
-            const m = picks[slot]
-            return (
-              <div
-                key={slot}
-                className="demo-card flex min-h-[6.5rem] flex-col items-center justify-center gap-1 p-2 text-center"
-              >
-                {m ? (
-                  <>
-                    <span className="line-clamp-2 text-xs font-semibold text-[var(--sea-ink)]">
-                      {m.title}
-                    </span>
-                    <button
-                      type="button"
-                      className="demo-pill demo-button-danger mt-1"
-                      onClick={() => toggle(m)}
-                    >
-                      Remove
-                    </button>
-                  </>
-                ) : (
-                  <span className="demo-muted text-2xl" aria-hidden>
-                    +
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: PICKS_PER_PLAYER }).map((_, slot) => {
+          const m = picks[slot]
+          return (
+            <div
+              key={slot}
+              className="fg-card flex min-h-[6.5rem] flex-col items-center justify-center gap-1 p-2 text-center"
+            >
+              {m ? (
+                <>
+                  <span className="line-clamp-3 text-xs font-semibold">{m.title}</span>
+                  <button
+                    type="button"
+                    className="fg-pill mt-1 cursor-pointer text-[#f0a3a3]"
+                    onClick={() => toggle(m)}
+                  >
+                    Remove
+                  </button>
+                </>
+              ) : (
+                <span className="text-2xl text-zinc-600" aria-hidden>
+                  +
+                </span>
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      <div className="demo-panel">
-        <h3 className="demo-section-title mb-3">Search movies</h3>
-        <MovieSearch picks={picks} onToggle={toggle} />
-      </div>
+      <MovieSearch picks={picks} onToggle={toggle} />
 
       <button
         type="button"
-        className="demo-button sticky bottom-4 py-4 text-base shadow-lg"
+        className="fg-btn fg-btn-primary sticky bottom-4 mt-1 py-4 text-base shadow-lg shadow-black/40"
         disabled={!isFull}
         onClick={lockIn}
       >

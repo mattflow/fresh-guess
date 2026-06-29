@@ -28,9 +28,11 @@ export default function RevealScreen() {
 
   if (error) {
     return (
-      <section className="island-shell rise-in p-7 text-center">
-        <p className="demo-alert demo-alert-danger">Couldn't fetch the scores. Try again.</p>
-        <button type="button" className="demo-button mt-4" onClick={() => location.reload()}>
+      <section className="fg-rise text-center">
+        <p className="rounded-lg bg-[#2a1a1a] px-3 py-3 text-sm text-[#f0a3a3]">
+          Couldn't fetch the scores.
+        </p>
+        <button type="button" className="fg-btn fg-btn-primary mt-4" onClick={() => location.reload()}>
           Retry
         </button>
       </section>
@@ -39,9 +41,9 @@ export default function RevealScreen() {
 
   if (!scores) {
     return (
-      <section className="island-shell rise-in p-10 text-center">
-        <p className="island-kicker">Tallying the Tomatometer…</p>
-        <p className="display-title mt-2 text-3xl text-[var(--sea-ink)]">Revealing scores</p>
+      <section className="fg-rise flex min-h-[60vh] flex-col items-center justify-center text-center">
+        <p className="fg-kicker">Tallying the Tomatometer…</p>
+        <p className="mt-2 text-2xl font-extrabold">Revealing scores</p>
       </section>
     )
   }
@@ -65,15 +67,21 @@ export default function RevealScreen() {
   const winners = ranked.filter((r) => r.isWinner)
 
   return (
-    <section className="rise-in flex flex-col gap-5">
-      <header className="island-shell p-6 text-center">
-        <p className="island-kicker">Target {TARGET}</p>
-        <h2 className="display-title mt-1 text-3xl text-[var(--sea-ink)]">
-          {winners.length > 1 ? "It's a tie!" : `🏆 ${winners[0].player.name} wins!`}
+    <section className="fg-rise flex flex-col gap-4">
+      <header className="text-center">
+        <p className="fg-kicker">Target {TARGET}</p>
+        <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
+          {winners.length > 1 ? (
+            "It's a tie!"
+          ) : (
+            <>
+              🏆 <span className="text-[var(--color-fresh)]">{winners[0].player.name}</span> wins!
+            </>
+          )}
         </h2>
-        <p className="demo-muted mt-1 text-sm">
+        <p className="mt-1 text-sm text-zinc-400">
           {winners.length > 1
-            ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} away from ${TARGET}.`
+            ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} from ${TARGET}.`
             : `${winners[0].total} — just ${winners[0].distance} from ${TARGET}.`}
         </p>
       </header>
@@ -82,32 +90,26 @@ export default function RevealScreen() {
         {ranked.map((r) => (
           <div
             key={r.player.id}
-            className={
-              'demo-panel ' +
-              (r.isWinner ? 'border-[var(--lagoon-deep)] ring-1 ring-[var(--lagoon)]' : '')
-            }
+            className={'fg-card p-4 ' + (r.isWinner ? 'ring-1 ring-[var(--color-fresh)]' : '')}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="demo-section-title flex items-center gap-2">
+              <h3 className="flex items-center gap-2 font-bold">
                 {r.isWinner && <span aria-hidden>🏆</span>}
                 {r.player.name}
               </h3>
               <div className="text-right">
-                <div className="text-2xl font-extrabold text-[var(--sea-ink)]">{r.total}</div>
-                <div className="demo-muted text-xs">{r.distance} from {TARGET}</div>
+                <div className="text-2xl font-extrabold">{r.total}</div>
+                <div className="text-xs text-zinc-500">{r.distance} from {TARGET}</div>
               </div>
             </div>
-            <ul className="mt-3 flex flex-col gap-1">
+            <ul className="mt-3 flex flex-col gap-1.5">
               {r.player.picks.map((m, i) => (
-                <li
-                  key={m.objectID}
-                  className="flex items-center justify-between gap-2 text-sm"
-                >
-                  <span className="min-w-0 truncate text-[var(--sea-ink)]">
+                <li key={m.objectID} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 truncate text-zinc-300">
                     {m.title}
-                    {m.year != null && <span className="demo-muted"> ({m.year})</span>}
+                    {m.year != null && <span className="text-zinc-500"> ({m.year})</span>}
                   </span>
-                  <span className="demo-pill shrink-0">
+                  <span className="fg-pill shrink-0">
                     {r.scores[i] == null ? 'N/A' : `${r.scores[i]}%`}
                   </span>
                 </li>
@@ -117,17 +119,17 @@ export default function RevealScreen() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="mt-1 flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
-          className="demo-button flex-1"
+          className="fg-btn fg-btn-primary flex-1 py-3.5"
           onClick={() => dispatch({ type: 'playAgain' })}
         >
-          Play again (same players)
+          Play again
         </button>
         <button
           type="button"
-          className="demo-button demo-button-secondary flex-1"
+          className="fg-btn fg-btn-ghost flex-1 py-3.5"
           onClick={() => dispatch({ type: 'newGame', ids: [newId(), newId()] })}
         >
           New game
