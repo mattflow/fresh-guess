@@ -2,7 +2,7 @@
 // Assumes `pnpm dev` is running on http://localhost:3000.
 import { chromium } from 'playwright'
 
-const BASE = 'http://localhost:3000'
+const BASE = process.env.BASE || 'http://localhost:3000'
 const log = (...a) => console.log(...a)
 const fail = (m) => {
   console.error('✗ FAIL:', m)
