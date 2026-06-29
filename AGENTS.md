@@ -37,7 +37,7 @@ npx @tanstack/intent@latest list      # enumerates available local skills (route
 ## Fresh Guess game
 
 ### Gameplay decisions (confirmed with the user)
-- **Pass-and-play on one device** — no backend room/realtime sync; all game state is client-side.
+- **Pass-and-play on one device** — no backend room/realtime sync; all game state is client-side. **1+ players**: with a single player it's a solo challenge (skips the pass-the-phone gate; reveal shows your score + a distance-based rating instead of a winner). 2+ players is the closest-to-160 competition.
 - **Tomatometer (critics) score** is what counts toward 160 (not audience).
 - **Scores hidden by default** while picking — never auto-sent to the client or stored in `localStorage`. There is an **opt-in "Peek scores" toggle** (per turn, default off) that fetches scores on demand to show them on results + a running total. Each new turn resets to hidden.
 - **Single round** + "Play again" (keep players) / "New game" (reset).
@@ -175,6 +175,7 @@ Verified end-to-end inside the built container: serves `/`, accepts an arbitrary
 ### Testing the game
 - `node scripts/e2e.mjs` — full browser smoke test (register → pick → pass → reveal → play again + persistence) against a running `pnpm dev`.
 - `node scripts/verify-features.mjs` — checks the Peek-scores toggle and light/dark theming (incl. system default + persistence).
+- `node scripts/verify-solo.mjs` — checks single-player mode (Play solo, no pass gate, solo reveal, play again).
 - `node scripts/probe-rt.mjs` — re-discover RT Algolia keys/index/fields if RT changes.
 
 ### Next steps / ideas

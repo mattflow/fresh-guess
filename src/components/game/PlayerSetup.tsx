@@ -4,7 +4,7 @@ import { newId, useGame } from './GameProvider'
 export default function PlayerSetup() {
   const { state, dispatch } = useGame()
   const namedCount = state.players.filter((p) => p.name.trim()).length
-  const canStart = state.players.length >= 2 && namedCount === state.players.length
+  const canStart = state.players.length >= 1 && namedCount === state.players.length
 
   return (
     <section className="fg-rise">
@@ -14,7 +14,8 @@ export default function PlayerSetup() {
         </h1>
         <p className="mt-2 text-sm text-[var(--fg-muted)]">
           Secretly pick 3 movies. Get their Rotten Tomatoes scores closest to{' '}
-          <strong className="text-[var(--fg-text)]">{TARGET}</strong>. No peeking — closest wins.
+          <strong className="text-[var(--fg-text)]">{TARGET}</strong>. No peeking — play solo or
+          pass the phone, closest wins.
         </p>
       </header>
 
@@ -36,7 +37,7 @@ export default function PlayerSetup() {
                 type="button"
                 className="fg-btn fg-btn-danger shrink-0 px-3"
                 aria-label={`Remove player ${i + 1}`}
-                disabled={state.players.length <= 2}
+                disabled={state.players.length <= 1}
                 onClick={() => dispatch({ type: 'removePlayer', id: p.id })}
               >
                 ✕
@@ -61,11 +62,11 @@ export default function PlayerSetup() {
         disabled={!canStart}
         onClick={() => dispatch({ type: 'startGame' })}
       >
-        Start game →
+        {state.players.length === 1 ? 'Play solo →' : 'Start game →'}
       </button>
       {!canStart && (
         <p className="mt-2 text-center text-xs text-[var(--fg-muted)]">
-          Add at least 2 players and name everyone.
+          Name everyone to start. One player is fine for a solo challenge.
         </p>
       )}
     </section>

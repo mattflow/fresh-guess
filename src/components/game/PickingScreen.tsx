@@ -13,6 +13,7 @@ export default function PickingScreen() {
   const [peeking, setPeeking] = useState(false)
   const { scores, ensure } = useScores()
 
+  const isSolo = state.players.length === 1
   const idx = state.currentPlayerIndex
   const player = state.players[idx]
   const picks = player?.picks ?? []
@@ -24,7 +25,9 @@ export default function PickingScreen() {
 
   if (!player) return null
 
-  if (armedIndex !== idx) {
+  // Solo play needs no hand-off; multiplayer shows a "pass the phone" gate so
+  // the next player can't see the previous picks.
+  if (!isSolo && armedIndex !== idx) {
     return (
       <PassDevice
         name={player.name || `Player ${idx + 1}`}
@@ -58,7 +61,9 @@ export default function PickingScreen() {
     <section className="fg-rise flex flex-col gap-4">
       <header>
         <p className="fg-kicker">
-          {player.name}'s turn · Player {idx + 1} of {state.players.length}
+          {isSolo
+            ? 'Solo round'
+            : `${player.name}'s turn · Player ${idx + 1} of ${state.players.length}`}
         </p>
         <h2 className="mt-1 text-2xl font-extrabold tracking-tight">
           Pick {PICKS_PER_PLAYER} movies for {TARGET}
@@ -140,9 +145,11 @@ export default function PickingScreen() {
         onClick={lockIn}
       >
         {isFull
-          ? isLast
-            ? 'Lock in & reveal results →'
-            : 'Lock in & pass the phone →'
+          ? isSolo
+            ? 'Reveal my score →'
+            : isLast
+              ? 'Lock in & reveal results →'
+              : 'Lock in & pass the phone →'
           : `Pick ${PICKS_PER_PLAYER - picks.length} more`}
       </button>
     </section>

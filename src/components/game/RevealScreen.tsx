@@ -61,8 +61,10 @@ export default function RevealScreen() {
     }
   })
 
+  const isSolo = results.length === 1
   const best = Math.min(...results.map((r) => r.distance))
-  results.forEach((r) => (r.isWinner = r.distance === best))
+  // No "winner" in a solo round — it's just your score vs the target.
+  results.forEach((r) => (r.isWinner = !isSolo && r.distance === best))
   const ranked = [...results].sort((a, b) => a.distance - b.distance)
   const winners = ranked.filter((r) => r.isWinner)
 
@@ -70,20 +72,27 @@ export default function RevealScreen() {
     <section className="fg-rise flex flex-col gap-4">
       <header className="text-center">
         <p className="fg-kicker">Target {TARGET}</p>
-        <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
-          {winners.length > 1 ? (
-            "It's a tie!"
-          ) : (
-            <>
-              🏆 <span className="text-[var(--color-fresh)]">{winners[0].player.name}</span> wins!
-            </>
-          )}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          {winners.length > 1
-            ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} from ${TARGET}.`
-            : `${winners[0].total} — just ${winners[0].distance} from ${TARGET}.`}
-        </p>
+        {isSolo ? (
+          <SoloHeading total={ranked[0].total} distance={ranked[0].distance} />
+        ) : (
+          <>
+            <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
+              {winners.length > 1 ? (
+                "It's a tie!"
+              ) : (
+                <>
+                  🏆 <span className="text-[var(--color-fresh)]">{winners[0].player.name}</span>{' '}
+                  wins!
+                </>
+              )}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--fg-muted)]">
+              {winners.length > 1
+                ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} from ${TARGET}.`
+                : `${winners[0].total} — just ${winners[0].distance} from ${TARGET}.`}
+            </p>
+          </>
+        )}
       </header>
 
       <div className="flex flex-col gap-3">
@@ -136,5 +145,28 @@ export default function RevealScreen() {
         </button>
       </div>
     </section>
+  )
+}
+
+function soloRating(distance: number): { emoji: string; text: string } {
+  if (distance === 0) return { emoji: '🎯', text: 'Bullseye — exactly 160!' }
+  if (distance <= 5) return { emoji: '🔥', text: 'So close!' }
+  if (distance <= 15) return { emoji: '🙌', text: 'Nicely done!' }
+  if (distance <= 30) return { emoji: '👏', text: 'Not bad!' }
+  return { emoji: '🎬', text: 'Room to improve — play again!' }
+}
+
+function SoloHeading({ total, distance }: { total: number; distance: number }) {
+  const rating = soloRating(distance)
+  return (
+    <>
+      <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
+        {rating.emoji} {rating.text}
+      </h2>
+      <p className="mt-1 text-sm text-[var(--fg-muted)]">
+        You scored <span className="text-[var(--color-fresh)]">{total}</span> — {distance} from{' '}
+        {TARGET}.
+      </p>
+    </>
   )
 }

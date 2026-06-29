@@ -19,9 +19,10 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart(),
     // Nitro builds the production Node server -> .output/server/index.mjs
-    // (run with `node .output/server/index.mjs`). Keep Playwright external so
-    // Nitro traces it as a node_module instead of bundling the native binary.
-    nitro({ externals: { external: ['playwright', 'playwright-core', 'fsevents'] } }),
+    // (run with `node .output/server/index.mjs`). Nitro externalizes node deps
+    // by default, so Playwright is traced into .output as a node_module rather
+    // than bundled (its native binary can't be bundled).
+    nitro(),
     viteReact(),
   ],
 })

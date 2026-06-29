@@ -49,7 +49,7 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, players: [...state.players, emptyPlayer(action.id)] }
 
     case 'removePlayer':
-      if (state.players.length <= 2) return state
+      if (state.players.length <= 1) return state
       return { ...state, players: state.players.filter((p) => p.id !== action.id) }
 
     case 'setName':
