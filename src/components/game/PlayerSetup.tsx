@@ -12,9 +12,9 @@ export default function PlayerSetup() {
         <h1 className="text-4xl font-extrabold tracking-tight">
           Fresh <span className="text-[var(--color-splat)]">Guess</span>
         </h1>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-[var(--fg-muted)]">
           Secretly pick 3 movies. Get their Rotten Tomatoes scores closest to{' '}
-          <strong className="text-zinc-200">{TARGET}</strong>. No peeking — closest wins.
+          <strong className="text-[var(--fg-text)]">{TARGET}</strong>. No peeking — closest wins.
         </p>
       </header>
 
@@ -64,7 +64,7 @@ export default function PlayerSetup() {
         Start game →
       </button>
       {!canStart && (
-        <p className="mt-2 text-center text-xs text-zinc-500">
+        <p className="mt-2 text-center text-xs text-[var(--fg-muted)]">
           Add at least 2 players and name everyone.
         </p>
       )}

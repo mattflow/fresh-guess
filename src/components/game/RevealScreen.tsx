@@ -29,7 +29,7 @@ export default function RevealScreen() {
   if (error) {
     return (
       <section className="fg-rise text-center">
-        <p className="rounded-lg bg-[#2a1a1a] px-3 py-3 text-sm text-[#f0a3a3]">
+        <p className="rounded-lg bg-[var(--fg-danger-bg)] px-3 py-3 text-sm text-[var(--fg-danger)]">
           Couldn't fetch the scores.
         </p>
         <button type="button" className="fg-btn fg-btn-primary mt-4" onClick={() => location.reload()}>
@@ -79,7 +79,7 @@ export default function RevealScreen() {
             </>
           )}
         </h2>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-[var(--fg-muted)]">
           {winners.length > 1
             ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} from ${TARGET}.`
             : `${winners[0].total} — just ${winners[0].distance} from ${TARGET}.`}
@@ -99,15 +99,15 @@ export default function RevealScreen() {
               </h3>
               <div className="text-right">
                 <div className="text-2xl font-extrabold">{r.total}</div>
-                <div className="text-xs text-zinc-500">{r.distance} from {TARGET}</div>
+                <div className="text-xs text-[var(--fg-muted)]">{r.distance} from {TARGET}</div>
               </div>
             </div>
             <ul className="mt-3 flex flex-col gap-1.5">
               {r.player.picks.map((m, i) => (
                 <li key={m.objectID} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="min-w-0 truncate text-zinc-300">
+                  <span className="min-w-0 truncate text-[var(--fg-muted)]">
                     {m.title}
-                    {m.year != null && <span className="text-zinc-500"> ({m.year})</span>}
+                    {m.year != null && <span className="text-[var(--fg-muted)]"> ({m.year})</span>}
                   </span>
                   <span className="fg-pill shrink-0">
                     {r.scores[i] == null ? 'N/A' : `${r.scores[i]}%`}

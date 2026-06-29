@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import { searchMoviesFn } from '../../lib/game.functions'
 import { PICKS_PER_PLAYER, type SelectedMovie } from '../../lib/game-types'
+import { isFresh } from './useScores'
 
 export default function MovieSearch({
   picks,
   onToggle,
+  peeking,
+  scores,
+  ensureScores,
 }: {
   picks: SelectedMovie[]
   onToggle: (movie: SelectedMovie) => void
+  peeking: boolean
+  scores: Record<string, number>
+  ensureScores: (ids: string[]) => void
 }) {
   const search = useServerFn(searchMoviesFn)
   const [query, setQuery] = useState('')
@@ -40,6 +47,11 @@ export default function MovieSearch({
     return () => clearTimeout(handle)
   }, [query, search])
 
+  // When peeking, fetch scores for the currently visible results.
+  useEffect(() => {
+    if (peeking && results.length) ensureScores(results.map((m) => m.objectID))
+  }, [peeking, results, ensureScores])
+
   const isFull = picks.length >= PICKS_PER_PLAYER
   const isPicked = (id: string) => picks.some((m) => m.objectID === id)
 
@@ -55,14 +67,14 @@ export default function MovieSearch({
       />
 
       <div className="mt-3 flex flex-col gap-2">
-        {status === 'loading' && <p className="text-sm text-zinc-500">Searching…</p>}
+        {status === 'loading' && <p className="text-sm text-[var(--fg-muted)]">Searching…</p>}
         {status === 'error' && (
-          <p className="rounded-lg bg-[#2a1a1a] px-3 py-2 text-sm text-[#f0a3a3]">
+          <p className="rounded-lg bg-[var(--fg-danger-bg)] px-3 py-2 text-sm text-[var(--fg-danger)]">
             Couldn't reach the movie database. Try again.
           </p>
         )}
         {status === 'done' && results.length === 0 && (
-          <p className="text-sm text-zinc-500">No scored movies match "{query.trim()}".</p>
+          <p className="text-sm text-[var(--fg-muted)]">No scored movies match "{query.trim()}".</p>
         )}
 
         {results.map((m) => {
@@ -78,12 +90,14 @@ export default function MovieSearch({
               <Poster url={m.posterUrl} title={m.title} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{m.title}</span>
-                {m.year != null && <span className="block text-xs text-zinc-500">{m.year}</span>}
+                {m.year != null && (
+                  <span className="block text-xs text-[var(--fg-muted)]">{m.year}</span>
+                )}
               </span>
+              {peeking && <ScoreBadge score={scores[m.objectID]} />}
               <span
                 className={
-                  'fg-pill shrink-0 ' +
-                  (picked ? 'bg-[var(--color-fresh)] text-black' : '')
+                  'fg-pill shrink-0 ' + (picked ? 'bg-[var(--color-fresh)] text-black' : '')
                 }
               >
                 {picked ? '✓ Picked' : isFull ? 'Full' : '+ Pick'}
@@ -96,11 +110,25 @@ export default function MovieSearch({
   )
 }
 
+export function ScoreBadge({ score }: { score?: number }) {
+  if (score == null) {
+    return <span className="fg-pill shrink-0 tabular-nums">···</span>
+  }
+  return (
+    <span
+      className="fg-pill shrink-0 tabular-nums text-black"
+      style={{ background: isFresh(score) ? 'var(--color-fresh)' : 'var(--color-splat)' }}
+    >
+      {score}%
+    </span>
+  )
+}
+
 function Poster({ url, title }: { url?: string; title: string }) {
   if (!url) {
     return (
       <span
-        className="grid h-14 w-10 shrink-0 place-items-center rounded-md bg-[#222229] text-zinc-500"
+        className="grid h-14 w-10 shrink-0 place-items-center rounded-md bg-[var(--fg-pill-bg)] text-[var(--fg-muted)]"
         aria-hidden
       >
         🎬

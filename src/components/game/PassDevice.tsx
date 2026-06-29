@@ -22,7 +22,7 @@ export default function PassDevice({
         <br />
         <span className="text-[var(--color-splat)]">{name}</span>
       </h2>
-      <p className="mt-4 max-w-xs text-sm text-zinc-400">
+      <p className="mt-4 max-w-xs text-sm text-[var(--fg-muted)]">
         Pick 3 movies whose Tomatometer scores add up as close to {TARGET} as you can — without
         seeing the scores. Everyone reveals at the end.
       </p>

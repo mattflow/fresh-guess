@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import ThemeToggle from '../components/ThemeToggle'
 import { GameProvider, useGame } from '../components/game/GameProvider'
 import PlayerSetup from '../components/game/PlayerSetup'
 import PickingScreen from '../components/game/PickingScreen'
@@ -8,11 +9,14 @@ export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   return (
-    <main className="mx-auto w-full max-w-md px-4 pb-16 pt-8">
-      <GameProvider>
-        <GamePhase />
-      </GameProvider>
-    </main>
+    <>
+      <ThemeToggle />
+      <main className="mx-auto w-full max-w-md px-4 pb-16 pt-16">
+        <GameProvider>
+          <GamePhase />
+        </GameProvider>
+      </main>
+    </>
   )
 }
 

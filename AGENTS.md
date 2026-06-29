@@ -39,9 +39,10 @@ npx @tanstack/intent@latest list      # enumerates available local skills (route
 ### Gameplay decisions (confirmed with the user)
 - **Pass-and-play on one device** — no backend room/realtime sync; all game state is client-side.
 - **Tomatometer (critics) score** is what counts toward 160 (not audience).
-- **Scores hidden until reveal** — the answer is never sent to the client or stored in `localStorage` during picking.
+- **Scores hidden by default** while picking — never auto-sent to the client or stored in `localStorage`. There is an **opt-in "Peek scores" toggle** (per turn, default off) that fetches scores on demand to show them on results + a running total. Each new turn resets to hidden.
 - **Single round** + "Play again" (keep players) / "New game" (reset).
 - **Persistence:** an in-progress game survives a refresh via `localStorage` (key `fresh-guess:game`).
+- **Theming:** light/dark, **defaulting to system** preference, with a top-right toggle cycling system → light → dark (persisted in `localStorage` key `fg-theme`; pre-paint script in `__root.tsx` avoids flash).
 
 ### How movie scores are sourced (no RT API)
 Rotten Tomatoes has no public API. RT's own site embeds Algolia search credentials in a runtime global, `window.RottenTomatoes.thirdParty.algoliaSearch` → `{ aId, sId }` (Algolia **app id** + **search-only key**). We read them server-side with **Playwright**, then query Algolia.
@@ -66,16 +67,19 @@ Key files:
 - `src/lib/rt-algolia.server.ts` — **server-only** (`.server.ts` keeps Playwright out of the client bundle). Credential cache + scrape, `searchMovies` (returns movies **without** scores, filtered to those that have a Tomatometer), `getScores` (objectID → criticsScore, reveal only).
 - `src/lib/game.functions.ts` — `createServerFn` RPC wrappers (`searchMoviesFn`, `revealScoresFn`) with Zod validators; lazy-`import()` the server-only module inside handlers.
 - `src/lib/game-types.ts` — shared client-safe types + `TARGET = 160`, `PICKS_PER_PLAYER = 3`.
-- `src/components/game/` — `GameProvider` (reducer + localStorage), `PlayerSetup`, `PassDevice` (hand-off gate so the next player can't see prior picks), `PickingScreen`, `MovieSearch` (debounced `useServerFn` search), `RevealScreen` (fetches scores, computes closest-to-160, tie-aware).
-- Routes: `src/routes/index.tsx` is the game (mounts `GameProvider` and switches on phase). `__root.tsx` is a minimal HTML shell — no header/footer/nav. There are no other routes.
+- `src/components/game/` — `GameProvider` (reducer + localStorage), `PlayerSetup`, `PassDevice` (hand-off gate so the next player can't see prior picks), `PickingScreen` (incl. the Peek toggle + running total), `MovieSearch` (debounced `useServerFn` search; `ScoreBadge` for peeked scores), `RevealScreen` (fetches scores, computes closest-to-160, tie-aware), `useScores.ts` (lazy on-demand score fetch/cache shared by Peek).
+- `src/components/ThemeToggle.tsx` — system/light/dark toggle.
+- Routes: `src/routes/index.tsx` is the game (mounts `GameProvider` + `ThemeToggle`, switches on phase). `__root.tsx` is a minimal HTML shell with the pre-paint theme script — no header/footer/nav. There are no other routes.
 - `scripts/` — dev tooling, not part of the app runtime: `probe-rt.mjs` (re-discover keys/index/fields), `e2e.mjs` (full browser smoke test against a running dev server), `shots.mjs` (screenshots).
 
 ### Styling
-The original starter's demo design system (ocean theme, `demo-*`/`island-*` classes, `Header`/`Footer`/`ThemeToggle`, landing + about pages) was **removed** — the app is just the game. `src/styles.css` is a small, purpose-built dark theme: Tailwind v4 import + a handful of `fg-*` classes (`fg-card`, `fg-btn` + `-primary`/`-ghost`/`-danger`, `fg-input`, `fg-pill`, `fg-kicker`, `fg-rise`) and two accent tokens (`--color-splat` RT-red, `--color-fresh` green). Components otherwise use Tailwind utilities directly. No theme toggle — it's dark only.
+The original starter's demo design system (ocean theme, `demo-*`/`island-*` classes, old `Header`/`Footer`, landing + about pages) was **removed** — the app is just the game. `src/styles.css` is small and purpose-built: Tailwind v4 import + a handful of `fg-*` classes (`fg-card`, `fg-btn` + `-primary`/`-ghost`/`-danger`, `fg-input`, `fg-pill`, `fg-kicker`, `fg-rise`) and two theme-independent accent tokens (`--color-splat` RT-red, `--color-fresh` green).
+
+**Light/dark theming** is driven by `--fg-*` CSS variables defined three times in `styles.css`: `:root` (light default), `@media (prefers-color-scheme: dark) :root:not([data-theme=light])` (system dark), and `:root[data-theme=dark]` (manual dark). Components reference `var(--fg-muted)`, `var(--fg-danger)`, etc. — **don't hardcode `text-zinc-*`/hex colors** in components or they won't adapt. `ThemeToggle` (`src/components/ThemeToggle.tsx`) sets/removes `data-theme` and persists the choice.
 
 ### Hidden-score integrity (important when editing)
-- `searchMoviesFn` must **never** return scores. Scores only come from `revealScoresFn`, called once on the reveal screen.
-- `SelectedMovie` (persisted to `localStorage`) carries no score. Don't add one.
+- `searchMoviesFn` must **never** return scores. Scores only come from `revealScoresFn` — called on the reveal screen, and on demand by the opt-in **Peek** feature (`useScores` hook, `src/components/game/useScores.ts`).
+- `SelectedMovie` (persisted to `localStorage`) carries no score. Don't add one. Peeked scores live only in transient React state.
 
 ### Vite config note
 `playwright` (and its optional native `fsevents`) are excluded from Vite's client dep optimizer and externalized for SSR in `vite.config.ts` — otherwise Vite tries to bundle the native `.node` binary and dev fails.
@@ -106,8 +110,10 @@ src/
     game-types.ts     # shared types + TARGET/PICKS constants
     game.functions.ts # createServerFn wrappers (search / reveal)
     rt-algolia.server.ts  # server-only: Playwright key scrape + Algolia
-  components/game/     # GameProvider, PlayerSetup, PassDevice,
-                       #   PickingScreen, MovieSearch, RevealScreen
+  components/
+    ThemeToggle.tsx    # system/light/dark toggle
+    game/              # GameProvider, PlayerSetup, PassDevice, PickingScreen,
+                       #   MovieSearch, RevealScreen, useScores
 scripts/              # probe-rt.mjs, e2e.mjs, shots.mjs (dev tooling)
 public/               # static assets
 vite.config.ts        # plugins + playwright externalization
@@ -159,6 +165,7 @@ Default Start build produces `dist/client` + `dist/server` and runs as a Node se
 
 ### Testing the game
 - `node scripts/e2e.mjs` — full browser smoke test (register → pick → pass → reveal → play again + persistence) against a running `pnpm dev`.
+- `node scripts/verify-features.mjs` — checks the Peek-scores toggle and light/dark theming (incl. system default + persistence).
 - `node scripts/probe-rt.mjs` — re-discover RT Algolia keys/index/fields if RT changes.
 
 ### Next steps / ideas

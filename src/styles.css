@@ -2,8 +2,88 @@
 
 /* ---- Fresh Guess: minimal, purpose-built styling ---- */
 
+/* Accent colors are theme-independent: RT splat-red + fresh green. */
+@theme {
+  --color-fresh: #46d369;
+  --color-splat: #fa5d2f;
+}
+
+/* Light theme (default). */
 :root {
+  color-scheme: light;
+  --fg-bg: #f3f3f5;
+  --fg-bg-glow: rgba(250, 93, 47, 0.08);
+  --fg-text: #18181b;
+  --fg-muted: #56565f;
+  --fg-faint: #a1a1aa;
+  --fg-card-from: #ffffff;
+  --fg-card-to: #fafafa;
+  --fg-card-border: #e5e5e9;
+  --fg-input-bg: #ffffff;
+  --fg-input-border: #d6d6db;
+  --fg-ghost-bg: #ffffff;
+  --fg-ghost-border: #d6d6db;
+  --fg-ghost-text: #27272a;
+  --fg-ghost-hover: #f1f1f3;
+  --fg-pill-bg: #eaeaee;
+  --fg-pill-text: #44444d;
+  --fg-kicker: #71717a;
+  --fg-danger: #c23636;
+  --fg-danger-bg: #fbe7e7;
+  --fg-danger-border: #f0c4c4;
+}
+
+/* Dark theme — applied automatically by system preference, unless the user has
+   explicitly chosen light (data-theme="light"). The same token list is repeated
+   under [data-theme="dark"] for an explicit manual choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --fg-bg: #0e0e12;
+    --fg-bg-glow: rgba(255, 255, 255, 0.06);
+    --fg-text: #f4f4f5;
+    --fg-muted: #a1a1aa;
+    --fg-faint: #52525b;
+    --fg-card-from: #18181f;
+    --fg-card-to: #141419;
+    --fg-card-border: #26262e;
+    --fg-input-bg: #131318;
+    --fg-input-border: #2e2e38;
+    --fg-ghost-bg: #1d1d25;
+    --fg-ghost-border: #2e2e38;
+    --fg-ghost-text: #e4e4e7;
+    --fg-ghost-hover: #25252f;
+    --fg-pill-bg: #222229;
+    --fg-pill-text: #c4c4cc;
+    --fg-kicker: #8a8a96;
+    --fg-danger: #f0a3a3;
+    --fg-danger-bg: #2a1a1a;
+    --fg-danger-border: #4a2a2a;
+  }
+}
+
+:root[data-theme='dark'] {
   color-scheme: dark;
+  --fg-bg: #0e0e12;
+  --fg-bg-glow: rgba(255, 255, 255, 0.06);
+  --fg-text: #f4f4f5;
+  --fg-muted: #a1a1aa;
+  --fg-faint: #52525b;
+  --fg-card-from: #18181f;
+  --fg-card-to: #141419;
+  --fg-card-border: #26262e;
+  --fg-input-bg: #131318;
+  --fg-input-border: #2e2e38;
+  --fg-ghost-bg: #1d1d25;
+  --fg-ghost-border: #2e2e38;
+  --fg-ghost-text: #e4e4e7;
+  --fg-ghost-hover: #25252f;
+  --fg-pill-bg: #222229;
+  --fg-pill-text: #c4c4cc;
+  --fg-kicker: #8a8a96;
+  --fg-danger: #f0a3a3;
+  --fg-danger-bg: #2a1a1a;
+  --fg-danger-border: #4a2a2a;
 }
 
 html,
@@ -14,24 +94,18 @@ body {
 body {
   margin: 0;
   background:
-    radial-gradient(110% 70% at 50% -10%, #1c1c24 0%, transparent 60%),
-    #0e0e12;
-  color: #f4f4f5;
+    radial-gradient(110% 70% at 50% -10%, var(--fg-bg-glow) 0%, transparent 60%),
+    var(--fg-bg);
+  color: var(--fg-text);
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Accents: Rotten Tomatoes red (splat) + fresh green */
-@theme {
-  --color-fresh: #46d369;
-  --color-splat: #fa5d2f;
-}
-
 /* Card surface */
 .fg-card {
-  border: 1px solid #26262e;
+  border: 1px solid var(--fg-card-border);
   border-radius: 1rem;
-  background: linear-gradient(180deg, #18181f 0%, #141419 100%);
+  background: linear-gradient(180deg, var(--fg-card-from) 0%, var(--fg-card-to) 100%);
 }
 
 /* Buttons */
@@ -67,37 +141,37 @@ body {
 }
 
 .fg-btn-ghost {
-  background: #1d1d25;
-  border-color: #2e2e38;
-  color: #e4e4e7;
+  background: var(--fg-ghost-bg);
+  border-color: var(--fg-ghost-border);
+  color: var(--fg-ghost-text);
 }
 .fg-btn-ghost:not(:disabled):hover {
-  background: #25252f;
+  background: var(--fg-ghost-hover);
 }
 
 .fg-btn-danger {
   background: transparent;
-  border-color: #4a2a2a;
-  color: #f0a3a3;
+  border-color: var(--fg-danger-border);
+  color: var(--fg-danger);
 }
 .fg-btn-danger:not(:disabled):hover {
-  background: #2a1a1a;
+  background: var(--fg-danger-bg);
 }
 
 /* Inputs */
 .fg-input {
   width: 100%;
-  border: 1px solid #2e2e38;
+  border: 1px solid var(--fg-input-border);
   border-radius: 0.75rem;
-  background: #131318;
-  color: #f4f4f5;
+  background: var(--fg-input-bg);
+  color: var(--fg-text);
   padding: 0.8rem 0.95rem;
   font-size: 1rem;
   outline: none;
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .fg-input::placeholder {
-  color: #6b6b76;
+  color: var(--fg-faint);
 }
 .fg-input:focus {
   border-color: var(--color-splat);
@@ -113,8 +187,8 @@ body {
   padding: 0.25rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 700;
-  background: #222229;
-  color: #c4c4cc;
+  background: var(--fg-pill-bg);
+  color: var(--fg-pill-text);
 }
 
 .fg-kicker {
@@ -122,7 +196,7 @@ body {
   letter-spacing: 0.14em;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #8a8a96;
+  color: var(--fg-kicker);
 }
 
 /* Subtle entrance */
