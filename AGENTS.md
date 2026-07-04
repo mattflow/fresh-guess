@@ -23,7 +23,30 @@ Every change must follow this workflow - no direct commits to `main`. This appli
 2. **Branch off fresh `origin/main`.** The worktree's branch (step 1) must start from `origin/main`. Keep it rebased on `origin/main` (not merged) as you go.
 3. **Open a PR when done.** The PR description must list explicit **acceptance criteria** for the change.
 4. **Validate every acceptance criterion locally with e2e tests** before considering the work complete — use / extend the `scripts/*.mjs` browser tests (`e2e.mjs`, `verify-features.mjs`, `verify-solo.mjs`) so each criterion maps to a passing check. Add new e2e coverage when a criterion isn't covered by an existing script.
-5. **Attach screenshots to the PR when relevant** (any UI-visible change) — use `scripts/shots.mjs` to capture them.
+5. **Attach screenshots to the PR when relevant** (any UI-visible change). Capture them with `scripts/shots.mjs` (or an ad-hoc Playwright script); it writes PNGs to `/tmp`. To actually **embed** them in the PR body from the CLI (there is no `gh` command to upload markdown attachments), host the images on the repo's long-lived orphan `assets` branch and reference their raw URLs - this keeps binaries off `main` and off feature branches while still rendering (the repo is **public**, so `raw.githubusercontent.com` URLs display inline):
+
+   ```bash
+   # From inside your worktree. Adds each screenshot as a blob and APPENDS it to
+   # the existing `assets` tree (preserving earlier PRs' images), commits with the
+   # old assets tip as parent, and pushes - none of this touches your working tree
+   # or feature branch. Prefix filenames with your branch name to avoid collisions.
+   git fetch origin assets 2>/dev/null || true
+   d=$(git hash-object -w /tmp/fg-myfeature-dark.png)
+   l=$(git hash-object -w /tmp/fg-myfeature-light.png)
+   if git rev-parse -q --verify FETCH_HEAD >/dev/null; then
+     parent=$(git rev-parse FETCH_HEAD); base=$(git ls-tree "$parent^{tree}"); parent_arg="-p $parent"
+   else
+     parent=""; base=""; parent_arg=""   # first-ever push: orphan commit, empty base
+   fi
+   tree=$( { [ -n "$base" ] && printf '%s\n' "$base"
+             printf '100644 blob %s\tmyfeature-dark.png\n'  "$d"
+             printf '100644 blob %s\tmyfeature-light.png\n' "$l"; } | git mktree )
+   commit=$(git commit-tree "$tree" $parent_arg -m "Screenshots: myfeature (PR #NN)")
+   git update-ref refs/heads/assets "$commit"
+   git push origin assets
+   ```
+
+   Then embed in the PR body with `![alt](https://raw.githubusercontent.com/mattflow/fresh-guess/assets/myfeature-dark.png)` (verify each URL returns `200 image/png` via `curl -sI` first). Screenshots are intentionally **never committed to `main`** - `shots.mjs` writing to `/tmp` is deliberate.
 6. **After submitting the PR, spawn a fresh-eyes subagent to review the diff.** Launch a subagent with **no prior context** from this task (it must not inherit your reasoning or assumptions) and have it review the PR's changes cold - correctness, regressions, and adherence to the conventions in this file. Then **address its findings**: fix real issues and push the follow-up, or explicitly note why a finding is a non-issue.
 
 ### Scaffolding provenance
@@ -76,9 +99,9 @@ Client (/ route — the whole app is the game)    Server (server functions → s
 
 Key files:
 - `src/lib/rt-algolia.server.ts` — **server-only** (`.server.ts` keeps Playwright out of the client bundle). Credential cache + scrape, `searchMovies` (returns movies **without** scores, filtered to those that have a Tomatometer), `getScores` (objectID → criticsScore, reveal only).
-- `src/lib/game.functions.ts` — `createServerFn` RPC wrappers (`searchMoviesFn`, `revealScoresFn`) with Zod validators; lazy-`import()` the server-only module inside handlers.
+- `src/lib/game.functions.ts` — `createServerFn` RPC wrappers (`primeCredentialsFn`, `searchMoviesFn`, `revealScoresFn`) with Zod validators; lazy-`import()` the server-only module inside handlers. `primeCredentialsFn` warms the Algolia credentials (may trigger the one-time scrape) and returns only `{ ready: true }` - no scores, no keys.
 - `src/lib/game-types.ts` — shared client-safe types + `TARGET = 160`, `PICKS_PER_PLAYER = 3`.
-- `src/components/game/` — `GameProvider` (reducer + localStorage), `PlayerSetup`, `PassDevice` (hand-off gate so the next player can't see prior picks), `PickingScreen` (incl. the Peek toggle + running total), `MovieSearch` (debounced `useServerFn` search; `ScoreBadge` for peeked scores), `RevealScreen` (fetches scores, computes closest-to-160, tie-aware), `useScores.ts` (lazy on-demand score fetch/cache shared by Peek).
+- `src/components/game/` — `GameProvider` (reducer + localStorage), `PlayerSetup`, `PassDevice` (hand-off gate so the next player can't see prior picks), `PickingScreen` (incl. the Peek toggle + running total), `MovieSearch` (debounced `useServerFn` search; `ScoreBadge` for peeked scores), `RevealScreen` (fetches scores, computes closest-to-160, tie-aware), `useScores.ts` (lazy on-demand score fetch/cache shared by Peek), `WarmupBanner` + `useCredentialWarmup.ts` (proactively warm RT credentials on load; slim auto-hiding banner while the cold-start scrape runs).
 - Routes: `src/routes/index.tsx` is the game (mounts `GameProvider`, switches on phase). `__root.tsx` is a minimal HTML shell — no header/footer/nav, no theme script. There are no other routes.
 - `scripts/` — dev tooling, not part of the app runtime: `probe-rt.mjs` (re-discover keys/index/fields), `e2e.mjs` (full browser smoke test against a running dev server), `shots.mjs` (screenshots).
 
@@ -185,6 +208,7 @@ Verified end-to-end inside the built container: serves `/`, accepts an arbitrary
 - `node scripts/e2e.mjs` — full browser smoke test (register → pick → pass → reveal → play again + persistence) against a running `pnpm dev`.
 - `node scripts/verify-features.mjs` — checks the Peek-scores toggle and system-driven light/dark theming (no selector; follows OS `prefers-color-scheme`).
 - `node scripts/verify-solo.mjs` — checks single-player mode (Play solo, no pass gate, solo reveal, play again).
+- `node scripts/verify-warmup.mjs` — checks the one-time credential warm-up banner on a cold `pnpm dev` (appears during the scrape, doesn't block setup, unmounts when ready; skips if credentials are already warm / `RT_ALGOLIA_*` set).
 - `node scripts/probe-rt.mjs` — re-discover RT Algolia keys/index/fields if RT changes.
 
 ### Next steps / ideas

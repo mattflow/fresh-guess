@@ -19,6 +19,9 @@ const FALLBACK = { aId: '79FRDP12PN', sId: '175588f6e5f8319b27702e4cc4013561' }
 type Credentials = { aId: string; sId: string; indexName: string }
 
 let cache: { creds: Credentials; fetchedAt: number } | null = null
+// Shared in-flight scrape so a warm-up (primeCredentialsFn) and a racing first
+// search don't each launch Chromium - concurrent callers await the same scrape.
+let inflightScrape: Promise<Credentials> | null = null
 
 /** A movie as shown to the client during picking — deliberately WITHOUT its score. */
 export type MovieResult = {
@@ -42,16 +45,26 @@ export async function getAlgoliaCredentials(forceRefresh = false): Promise<Crede
     return cache.creds
   }
 
-  // 3) Live scrape via Playwright.
-  try {
-    const scraped = await scrapeCredentials()
-    cache = { creds: { ...scraped, indexName: RT_INDEX }, fetchedAt: Date.now() }
-    return cache.creds
-  } catch (err) {
-    console.warn('[rt-algolia] Playwright scrape failed, using fallback keys:', (err as Error).message)
-    // 4) Fall back to last-known-good (or a stale cache, whichever exists).
-    return cache?.creds ?? { ...FALLBACK, indexName: RT_INDEX }
+  // 3) Live scrape via Playwright - share one in-flight scrape across callers.
+  if (!forceRefresh && inflightScrape) return inflightScrape
+  const scrape = (async () => {
+    try {
+      const scraped = await scrapeCredentials()
+      cache = { creds: { ...scraped, indexName: RT_INDEX }, fetchedAt: Date.now() }
+      return cache.creds
+    } catch (err) {
+      console.warn('[rt-algolia] Playwright scrape failed, using fallback keys:', (err as Error).message)
+      // 4) Fall back to last-known-good (or a stale cache, whichever exists).
+      return cache?.creds ?? { ...FALLBACK, indexName: RT_INDEX }
+    }
+  })()
+  if (!forceRefresh) {
+    inflightScrape = scrape
+    scrape.finally(() => {
+      if (inflightScrape === scrape) inflightScrape = null
+    })
   }
+  return scrape
 }
 
 async function scrapeCredentials(): Promise<{ aId: string; sId: string }> {
