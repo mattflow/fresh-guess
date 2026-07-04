@@ -97,7 +97,7 @@ export default function MovieSearch({
               {peeking && <ScoreBadge score={scores[m.objectID]} />}
               <span
                 className={
-                  'fg-pill shrink-0 ' + (picked ? 'bg-[var(--color-fresh)] text-black' : '')
+                  'fg-pill shrink-0 ' + (picked ? 'fg-pill-fresh' : '')
                 }
               >
                 {picked ? '✓ Picked' : isFull ? 'Full' : '+ Pick'}
@@ -116,8 +116,9 @@ export function ScoreBadge({ score }: { score?: number }) {
   }
   return (
     <span
-      className="fg-pill shrink-0 tabular-nums text-black"
-      style={{ background: isFresh(score) ? 'var(--color-fresh)' : 'var(--color-splat)' }}
+      className={
+        'fg-pill shrink-0 tabular-nums ' + (isFresh(score) ? 'fg-pill-fresh' : 'fg-pill-splat')
+      }
     >
       {score}%
     </span>
