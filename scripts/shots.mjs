@@ -33,5 +33,23 @@ await shot('dark', 'dark-peek', async (page) => {
   await page.locator('button.fg-card').first().click()
 })
 
+// Dark-mode compact picking screen: chip strip (2 of 3 picked) + live results,
+// showing the keyboard-aware layout (pinned chrome, scrolling results, pinned Lock-in).
+await shot('dark', 'compact-picking', async (page) => {
+  await page.getByRole('button', { name: 'Remove player 2' }).click()
+  await page.getByPlaceholder('Player 1 name').fill('Ada')
+  await page.getByRole('button', { name: /Play solo/ }).click()
+  for (const q of ['the matrix', 'inception']) {
+    const s = page.getByPlaceholder('Search a movie title…')
+    await s.fill('')
+    await s.fill(q)
+    await page.locator('button.fg-card').first().waitFor({ timeout: 15000 })
+    await page.locator('button.fg-card').first().click()
+  }
+  // Leave a query so both the chip strip and result rows are visible in the shot.
+  await page.getByPlaceholder('Search a movie title…').fill('jaws')
+  await page.locator('button.fg-card').first().waitFor({ timeout: 15000 })
+})
+
 await browser.close()
-console.log('screenshots: /tmp/fg-light-setup.png, /tmp/fg-dark-peek.png')
+console.log('screenshots: /tmp/fg-light-setup.png, /tmp/fg-dark-peek.png, /tmp/fg-compact-picking.png')

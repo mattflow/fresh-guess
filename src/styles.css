@@ -124,6 +124,23 @@ body {
   background: var(--fg-ghost-hover);
 }
 
+/* Compact button variant for dense chrome rows (e.g. the peek toggle). Kept
+   unlayered so it composes with the unlayered color modifiers above. */
+.fg-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
 .fg-btn-danger {
   background: transparent;
   border-color: var(--fg-danger-border);
@@ -164,6 +181,18 @@ body {
   font-weight: 700;
   background: var(--fg-pill-bg);
   color: var(--fg-pill-text);
+}
+
+/* Score pills sit on the accent green / red — both need near-black text for
+   legibility. This must live in an unlayered class: Tailwind's `text-*`
+   utilities are layered and lose to the unlayered `.fg-pill` color above. */
+.fg-pill-fresh {
+  background: var(--color-fresh);
+  color: #06240f;
+}
+.fg-pill-splat {
+  background: var(--color-splat);
+  color: #2b0d02;
 }
 
 .fg-kicker {
