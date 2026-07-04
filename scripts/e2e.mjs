@@ -76,6 +76,48 @@ try {
   log('  score pills (%):', pct)
   if (pct < 6) fail(`expected >=6 score percentages at reveal, got ${pct}`)
 
+  // Reveal pills must be color-coded fresh/splat (matching Peek), not plain gray,
+  // and their text must stay legible on the accent (WCAG AA is 3:1 for bold text;
+  // we require a comfortable >= 4.5:1 across every pill).
+  const srgb = (c) => {
+    const x = c / 255
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4
+  }
+  const lum = ([r, g, b]) => 0.2126 * srgb(r) + 0.7152 * srgb(g) + 0.0722 * srgb(b)
+  const parse = (s) => s.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number)
+  const contrast = (fg, bg) => {
+    const [l1, l2] = [lum(parse(fg)), lum(parse(bg))].sort((a, b) => b - a)
+    return (l1 + 0.05) / (l2 + 0.05)
+  }
+  // The fresh/splat accent colors, so we can confirm each reveal pill sits on one
+  // of them (and not the plain-gray default --fg-pill-bg).
+  const hexToRgb = (h) => {
+    const n = parseInt(h.replace('#', ''), 16)
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  }
+  const accents = await page.evaluate(() => {
+    const cs = getComputedStyle(document.documentElement)
+    return [cs.getPropertyValue('--color-fresh').trim(), cs.getPropertyValue('--color-splat').trim()]
+  })
+  const accentRgb = accents.map((a) => hexToRgb(a).join())
+  const pillStyles = await page.locator('.fg-pill').filter({ hasText: '%' }).evaluateAll((els) =>
+    els.map((el) => {
+      const cs = getComputedStyle(el)
+      return { color: cs.color, bg: cs.backgroundColor }
+    }),
+  )
+  let worst = Infinity
+  let offAccent = 0
+  for (const { color, bg } of pillStyles) {
+    worst = Math.min(worst, contrast(color, bg))
+    // An accent pill's bg matches --color-fresh or --color-splat; a plain-gray one won't.
+    if (!accentRgb.includes(parse(bg).join())) offAccent++
+  }
+  if (offAccent > 0) fail(`${offAccent}/${pillStyles.length} reveal pills are not on a fresh/splat accent`)
+  else log(`✓ all ${pillStyles.length} reveal pills use fresh/splat accents (not gray)`)
+  if (worst < 4.5) fail(`reveal pill text contrast too low: ${worst.toFixed(2)}:1 (need >= 4.5)`)
+  else log(`✓ reveal pill text legible on accents (min contrast ${worst.toFixed(2)}:1)`)
+
   // Winner sanity: heading mentions a name or tie
   if (!/wins!|tie/i.test(heading)) fail('reveal heading missing winner/tie')
 

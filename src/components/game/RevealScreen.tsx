@@ -3,6 +3,7 @@ import { useServerFn } from '@tanstack/react-start'
 import { revealScoresFn } from '../../lib/game.functions'
 import { TARGET, type PlayerResult } from '../../lib/game-types'
 import { newId, useGame } from './GameProvider'
+import { isFresh } from './useScores'
 
 export default function RevealScreen() {
   const { state, dispatch } = useGame()
@@ -118,7 +119,13 @@ export default function RevealScreen() {
                     {m.title}
                     {m.year != null && <span className="text-[var(--fg-muted)]"> ({m.year})</span>}
                   </span>
-                  <span className="fg-pill shrink-0">
+                  {/* Color-code fresh/splat to match the Peek badges (ScoreBadge). */}
+                  <span
+                    className={
+                      'fg-pill shrink-0 tabular-nums ' +
+                      (r.scores[i] == null ? '' : isFresh(r.scores[i]!) ? 'fg-pill-fresh' : 'fg-pill-splat')
+                    }
+                  >
                     {r.scores[i] == null ? 'N/A' : `${r.scores[i]}%`}
                   </span>
                 </li>
