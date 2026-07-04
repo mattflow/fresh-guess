@@ -3,6 +3,7 @@ import { GameProvider, useGame } from '../components/game/GameProvider'
 import PlayerSetup from '../components/game/PlayerSetup'
 import PickingScreen from '../components/game/PickingScreen'
 import RevealScreen from '../components/game/RevealScreen'
+import WarmupBanner from '../components/game/WarmupBanner'
 
 export const Route = createFileRoute('/')({ component: Home })
 
@@ -10,6 +11,9 @@ function Home() {
   return (
     <main>
       <GameProvider>
+        {/* Warms RT credentials at the earliest mount; renders a banner only
+            while a cold-start scrape is genuinely in flight. */}
+        <WarmupBanner />
         <GamePhase />
       </GameProvider>
     </main>

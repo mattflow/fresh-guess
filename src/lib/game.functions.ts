@@ -4,6 +4,17 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
+/**
+ * Warm the RT Algolia credentials (may trigger the one-time Playwright scrape)
+ * so the first real search is instant. Exposes nothing sensitive — returns no
+ * scores and no keys, only a readiness flag.
+ */
+export const primeCredentialsFn = createServerFn({ method: 'POST' }).handler(async () => {
+  const { getAlgoliaCredentials } = await import('./rt-algolia.server')
+  await getAlgoliaCredentials()
+  return { ready: true as const }
+})
+
 /** Search RT movies by title. Returns movies WITHOUT scores (it's a guessing game). */
 export const searchMoviesFn = createServerFn({ method: 'POST' })
   .validator(z.object({ query: z.string().min(1).max(120) }))
