@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 /**
  * Warm the RT Algolia credentials (may trigger the one-time Playwright scrape)
- * so the first real search is instant. Exposes nothing sensitive — returns no
+ * so the first real search is instant. Exposes nothing sensitive - returns no
  * scores and no keys, only a readiness flag.
  */
 export const primeCredentialsFn = createServerFn({ method: 'POST' }).handler(async () => {

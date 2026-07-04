@@ -20,7 +20,7 @@ type Credentials = { aId: string; sId: string; indexName: string }
 
 let cache: { creds: Credentials; fetchedAt: number } | null = null
 // Shared in-flight scrape so a warm-up (primeCredentialsFn) and a racing first
-// search don't each launch Chromium — concurrent callers await the same scrape.
+// search don't each launch Chromium - concurrent callers await the same scrape.
 let inflightScrape: Promise<Credentials> | null = null
 
 /** A movie as shown to the client during picking — deliberately WITHOUT its score. */
@@ -45,7 +45,7 @@ export async function getAlgoliaCredentials(forceRefresh = false): Promise<Crede
     return cache.creds
   }
 
-  // 3) Live scrape via Playwright — share one in-flight scrape across callers.
+  // 3) Live scrape via Playwright - share one in-flight scrape across callers.
   if (!forceRefresh && inflightScrape) return inflightScrape
   const scrape = (async () => {
     try {

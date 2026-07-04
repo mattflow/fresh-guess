@@ -1,10 +1,16 @@
 // Verify the one-time credential warm-up banner. Requires a FRESHLY started
 // `pnpm dev` (cold server, no warm credential cache) and no RT_ALGOLIA_* env
-// vars set — otherwise credentials resolve instantly and the banner is
-// correctly absent (the fast path), which this script treats as a skip.
+// vars set - otherwise credentials resolve instantly and the banner is
+// correctly absent (the fast path).
+//
+// By default an absent banner is treated as a skip (credentials were already
+// warm / env-configured). Run with WARMUP_STRICT=1 (or `--strict`) when you can
+// guarantee a cold server: then an absent banner is a FAILURE, so this becomes
+// deterministic coverage for the "banner appears on cold load" criterion.
 import { chromium } from 'playwright'
 
 const BASE = 'http://localhost:3000'
+const STRICT = process.env.WARMUP_STRICT === '1' || process.argv.includes('--strict')
 const log = (...a) => console.log(...a)
 const fail = (m) => {
   console.error('✗ FAIL:', m)
@@ -22,8 +28,7 @@ try {
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
 
   // The banner should appear shortly after a cold load (warm-up > ~500ms while
-  // the Playwright scrape runs). If it never shows, credentials were already
-  // warm / env-configured — treat that as a skip, not a failure.
+  // the Playwright scrape runs).
   let appeared = true
   try {
     await banner().waitFor({ state: 'visible', timeout: 4000 })
@@ -32,7 +37,11 @@ try {
   }
 
   if (!appeared) {
-    log('… banner did not appear — credentials already warm or RT_ALGOLIA_* set (fast path). Skipping.')
+    if (STRICT) {
+      fail('strict mode: warm-up banner never appeared on a (supposedly cold) load')
+    } else {
+      log('… banner did not appear - credentials already warm or RT_ALGOLIA_* set (fast path). Skipping. Pass --strict on a cold server to require it.')
+    }
   } else {
     log('✓ warm-up banner appeared on cold load')
 

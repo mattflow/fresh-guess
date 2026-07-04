@@ -203,9 +203,11 @@ body {
   color: var(--fg-kicker);
 }
 
-/* One-time credential warm-up banner — slim, pinned to the top, theme-adaptive.
-   Respects the iOS safe-area top inset; unmounts once credentials are ready. */
+/* One-time credential warm-up banner - slim, pinned to the top, theme-adaptive.
+   Respects the iOS safe-area top inset; unmounts once credentials are ready.
+   Purely informational, so it never intercepts taps (pointer-events: none). */
 .fg-warmup {
+  pointer-events: none;
   position: fixed;
   top: 0;
   left: 0;
