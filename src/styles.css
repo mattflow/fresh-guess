@@ -33,11 +33,10 @@
   --fg-danger-border: #f0c4c4;
 }
 
-/* Dark theme — applied automatically by system preference, unless the user has
-   explicitly chosen light (data-theme="light"). The same token list is repeated
-   under [data-theme="dark"] for an explicit manual choice. */
+/* Dark theme — applied automatically by system preference. There is no manual
+   theme selector; the app always follows the OS `prefers-color-scheme`. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root {
     color-scheme: dark;
     --fg-bg: #0e0e12;
     --fg-bg-glow: rgba(255, 255, 255, 0.06);
@@ -60,30 +59,6 @@
     --fg-danger-bg: #2a1a1a;
     --fg-danger-border: #4a2a2a;
   }
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --fg-bg: #0e0e12;
-  --fg-bg-glow: rgba(255, 255, 255, 0.06);
-  --fg-text: #f4f4f5;
-  --fg-muted: #a1a1aa;
-  --fg-faint: #52525b;
-  --fg-card-from: #18181f;
-  --fg-card-to: #141419;
-  --fg-card-border: #26262e;
-  --fg-input-bg: #131318;
-  --fg-input-border: #2e2e38;
-  --fg-ghost-bg: #1d1d25;
-  --fg-ghost-border: #2e2e38;
-  --fg-ghost-text: #e4e4e7;
-  --fg-ghost-hover: #25252f;
-  --fg-pill-bg: #222229;
-  --fg-pill-text: #c4c4cc;
-  --fg-kicker: #8a8a96;
-  --fg-danger: #f0a3a3;
-  --fg-danger-bg: #2a1a1a;
-  --fg-danger-border: #4a2a2a;
 }
 
 html,

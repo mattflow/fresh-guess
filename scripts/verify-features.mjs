@@ -1,4 +1,4 @@
-// Verify the peek-scores button and light/dark theming. Requires `pnpm dev`.
+// Verify the peek-scores button and system-driven light/dark theming. Requires `pnpm dev`.
 import { chromium } from 'playwright'
 
 const BASE = 'http://localhost:3000'
@@ -23,32 +23,31 @@ try {
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
   await settle()
 
-  // ---- Theme: defaults to system (dark here), toggle cycles system→light→dark ----
-  const themeBtn = page.locator('button[aria-label^="Theme:"]')
-  if ((await themeAttr()) !== null) fail('expected no data-theme by default (system)')
+  // ---- Theme: no selector, always follows the OS prefers-color-scheme ----
+  // No manual theme toggle should exist anymore.
+  if ((await page.locator('button[aria-label^="Theme:"]').count()) !== 0)
+    fail('theme toggle button should have been removed')
+  // Never sets an explicit data-theme override — theming is purely media-query driven.
+  if ((await themeAttr()) !== null) fail('expected no data-theme attr (system only)')
   const darkBg = await bg()
-  log('✓ default theme = system (no data-theme attr); body bg', darkBg)
+  log('✓ no theme selector; dark OS preference → dark body bg', darkBg)
 
-  await themeBtn.click() // → light
-  if ((await themeAttr()) !== 'light') fail('expected data-theme=light after first toggle')
-  const lightBg = await bg()
-  if (lightBg === darkBg) fail('body background did not change for light theme')
-  log('✓ toggled to Light; body bg', lightBg)
-
-  await themeBtn.click() // → dark
-  if ((await themeAttr()) !== 'dark') fail('expected data-theme=dark after second toggle')
-  log('✓ toggled to Dark (data-theme=dark)')
-
-  // persistence across reload
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await settle()
-  if ((await themeAttr()) !== 'dark') fail('theme choice did not persist across reload')
-  log('✓ theme choice persisted across reload')
-
-  // back to system for the rest
-  await themeBtn.click() // → system
-  if ((await themeAttr()) !== null) fail('expected system (no attr) after third toggle')
-  log('✓ cycled back to System')
+  // A fresh context with a light OS preference should render the light palette.
+  const lightCtx = await browser.newContext({
+    colorScheme: 'light',
+    viewport: { width: 390, height: 844 },
+  })
+  const lightPage = await lightCtx.newPage()
+  await lightPage.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
+  await lightPage.waitForTimeout(1200)
+  const lightAttr = await lightPage.evaluate(() =>
+    document.documentElement.getAttribute('data-theme'),
+  )
+  const lightBg = await lightPage.evaluate(() => getComputedStyle(document.body).backgroundColor)
+  if (lightAttr !== null) fail('light context should also have no data-theme attr')
+  if (lightBg === darkBg) fail('light OS preference did not change the body background')
+  log('✓ light OS preference → light body bg', lightBg)
+  await lightCtx.close()
 
   // ---- Peek scores: hidden by default, button reveals %, hide button hides ----
   await page.getByPlaceholder('Player 1 name').fill('Ada')
