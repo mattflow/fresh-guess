@@ -17,13 +17,14 @@ Before editing files for a substantial task:
 
 ### Contribution workflow (always)
 
-Every change must follow this workflow — no direct commits to `main`:
+Every change must follow this workflow — no direct commits to `main`. This applies to **every** change with no exceptions — including one-line or "trivial" edits, and edits to this `AGENTS.md` file itself. Before running your first `Edit`/`Write` on any task, complete step 1. If you catch yourself about to edit a file in the primary checkout, stop and set up the worktree first — being on an existing feature branch there is **not** a substitute (that branch may be stale, and the checkout may hold another agent's uncommitted work).
 
-1. **Always work in an isolated `git worktree`.** Never edit files in the primary checkout — another agent may be working there concurrently. Create a dedicated worktree with its own branch off fresh `origin/main` (run `git fetch origin` first), e.g. `git worktree add -b <branch> ../fresh-guess-worktrees/<branch> origin/main`. Do all commits, tests, and screenshots inside that worktree, and `git worktree remove` it once the PR is merged. This keeps parallel work fully isolated.
+1. **Always work in an isolated `git worktree`.** Never edit files in the primary checkout — another agent may be working there concurrently. Always `git fetch origin` first so you branch off the current tip (a stale local branch will miss updates like this one). Create a dedicated worktree with its own branch off fresh `origin/main`, e.g. `git worktree add -b <branch> ../fresh-guess-worktrees/<branch> origin/main`. Do all commits, tests, and screenshots inside that worktree, and `git worktree remove` it once the PR is merged. This keeps parallel work fully isolated.
 2. **Branch off fresh `origin/main`.** The worktree's branch (step 1) must start from `origin/main`. Keep it rebased on `origin/main` (not merged) as you go.
 3. **Open a PR when done.** The PR description must list explicit **acceptance criteria** for the change.
 4. **Validate every acceptance criterion locally with e2e tests** before considering the work complete — use / extend the `scripts/*.mjs` browser tests (`e2e.mjs`, `verify-features.mjs`, `verify-solo.mjs`) so each criterion maps to a passing check. Add new e2e coverage when a criterion isn't covered by an existing script.
 5. **Attach screenshots to the PR when relevant** (any UI-visible change) — use `scripts/shots.mjs` to capture them.
+6. **After submitting the PR, spawn a fresh-eyes subagent to review the diff.** Launch a subagent with **no prior context** from this task (it must not inherit your reasoning or assumptions) and have it review the PR's changes cold — correctness, regressions, and adherence to the conventions in this file. Then **address its findings**: fix real issues and push the follow-up, or explicitly note why a finding is a non-issue.
 
 ### Scaffolding provenance
 
