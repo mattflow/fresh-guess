@@ -166,6 +166,18 @@ body {
   color: var(--fg-pill-text);
 }
 
+/* Score pills sit on the accent green / red — both need near-black text for
+   legibility. This must live in an unlayered class: Tailwind's `text-*`
+   utilities are layered and lose to the unlayered `.fg-pill` color above. */
+.fg-pill-fresh {
+  background: var(--color-fresh);
+  color: #06240f;
+}
+.fg-pill-splat {
+  background: var(--color-splat);
+  color: #2b0d02;
+}
+
 .fg-kicker {
   text-transform: uppercase;
   letter-spacing: 0.14em;
