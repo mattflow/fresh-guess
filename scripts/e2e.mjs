@@ -77,8 +77,8 @@ try {
   if (pct < 6) fail(`expected >=6 score percentages at reveal, got ${pct}`)
 
   // Reveal pills must be color-coded fresh/splat (matching Peek), not plain gray,
-  // and their text must stay legible on the accent (WCAG AA is 3:1 for bold text;
-  // we require a comfortable >= 4.5:1 across every pill).
+  // and their text must stay legible on the accent. The pills are ~11.5px bold
+  // (normal text under WCAG, so AA needs 4.5:1); we require >= 4.5:1 on every pill.
   const srgb = (c) => {
     const x = c / 255
     return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4

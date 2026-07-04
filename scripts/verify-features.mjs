@@ -71,6 +71,30 @@ try {
   if (peekCount < 1) fail('no scores shown after pressing Peek')
   log(`✓ Peek revealed ${peekCount} score badge(s)`)
 
+  // Peek badges sit on the green/red accent. This context is dark mode, where a
+  // muted default pill color would be illegible, so the accent classes must bake
+  // in near-black text. The pills are ~11.5px bold (normal text → AA needs 4.5:1).
+  const srgb = (c) => {
+    const x = c / 255
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4
+  }
+  const lum = ([r, g, b]) => 0.2126 * srgb(r) + 0.7152 * srgb(g) + 0.0722 * srgb(b)
+  const parse = (s) => s.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number)
+  const contrast = (fg, bg) => {
+    const [l1, l2] = [lum(parse(fg)), lum(parse(bg))].sort((a, b) => b - a)
+    return (l1 + 0.05) / (l2 + 0.05)
+  }
+  const badges = await page.locator('.fg-pill', { hasText: '%' }).evaluateAll((els) =>
+    els.map((el) => {
+      const cs = getComputedStyle(el)
+      return { color: cs.color, bg: cs.backgroundColor }
+    }),
+  )
+  let worst = Infinity
+  for (const { color, bg } of badges) worst = Math.min(worst, contrast(color, bg))
+  if (worst < 4.5) fail(`Peek badge text contrast too low (dark): ${worst.toFixed(2)}:1 (need >= 4.5)`)
+  else log(`✓ Peek badge text legible on green/red in dark mode (min contrast ${worst.toFixed(2)}:1)`)
+
   // pick one movie and confirm running total appears
   await page.locator('button.fg-card').first().click()
   const totalText = await page.locator('text=/\\/ 160/').first().innerText().catch(() => '')
