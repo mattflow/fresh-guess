@@ -31,6 +31,11 @@ try {
 
   async function takeTurn(name, queries) {
     await page.getByRole('button', { name: new RegExp(`I'm ${name}`) }).click()
+    // Each player's turn must start with an empty search box - the previous
+    // player's query must not carry over (issue #11).
+    const startValue = await page.getByPlaceholder('Search a movie title…').inputValue()
+    if (startValue !== '') fail(`${name}: search box not cleared on turn start (got "${startValue}")`)
+    else log(`✓ ${name}: search box empty at turn start`)
     for (const q of queries) {
       const search = page.getByPlaceholder('Search a movie title…')
       await search.fill('')
@@ -48,10 +53,7 @@ try {
     await page.getByRole('button', { name: /Lock in/ }).click()
   }
 
-  // Distinct-ish queries so each pick is a different movie
-  await takeTurn('Ada', ['the matrix', 'inception', 'cats'])
-
-  // --- Persistence check: reload mid-game (now Linus's pass screen) ---
+  // --- Persistence check: reload mid-game (Ada's pass screen) ---
   await page.reload({ waitUntil: 'domcontentloaded' })
   await settle()
   const survived = await page
@@ -62,6 +64,10 @@ try {
   if (survived) log('✓ game state survived a page reload (localStorage)')
   else fail('game did not resume after reload')
 
+  // Distinct-ish queries so each pick is a different movie. No reload between
+  // Ada and Linus, so the turn switch (and search-box clearing) is exercised
+  // in-memory - a reload would remount and mask a stale query.
+  await takeTurn('Ada', ['the matrix', 'inception', 'cats'])
   await takeTurn('Linus', ['interstellar', 'parasite', 'jaws'])
 
   // --- Reveal ---
