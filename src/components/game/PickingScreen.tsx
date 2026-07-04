@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PICKS_PER_PLAYER, TARGET, type SelectedMovie } from '../../lib/game-types'
+import EndGameButton from './EndGameButton'
 import { useGame } from './GameProvider'
 import PassDevice from './PassDevice'
 import PicksStrip from './PicksStrip'
@@ -85,7 +86,7 @@ export default function PickingScreen() {
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             className={'fg-btn-sm ' + (peeking ? 'fg-btn-primary' : 'fg-btn-ghost')}
@@ -94,12 +95,15 @@ export default function PickingScreen() {
           >
             {peeking ? '🙈 Hide scores' : '👀 Peek scores'}
           </button>
-          {peeking && picks.length > 0 && (
-            <div className="text-lg font-extrabold tabular-nums">
-              {allKnown ? total : `${total}…`}
-              <span className="text-xs font-semibold text-[var(--fg-muted)]"> / {TARGET}</span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {peeking && picks.length > 0 && (
+              <div className="text-lg font-extrabold tabular-nums">
+                {allKnown ? total : `${total}…`}
+                <span className="text-xs font-semibold text-[var(--fg-muted)]"> / {TARGET}</span>
+              </div>
+            )}
+            <EndGameButton />
+          </div>
         </div>
 
         <PicksStrip picks={picks} peeking={peeking} scores={scores} onRemove={toggle} />

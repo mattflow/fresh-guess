@@ -37,6 +37,7 @@ type Action =
   | { type: 'togglePick'; movie: SelectedMovie }
   | { type: 'lockIn' }
   | { type: 'playAgain' }
+  | { type: 'restartSetup' }
   | { type: 'newGame'; ids: [string, string] }
 
 function reducer(state: GameState, action: Action): GameState {
@@ -89,6 +90,16 @@ function reducer(state: GameState, action: Action): GameState {
     case 'playAgain':
       return {
         phase: 'picking',
+        currentPlayerIndex: 0,
+        players: state.players.map((p) => ({ ...p, picks: [] })),
+      }
+
+    // Abandon an in-progress game and return to setup, keeping the current
+    // players and their names (picks cleared). Unlike `newGame`, no reset to
+    // blank players — used by the mid-game "New game" control.
+    case 'restartSetup':
+      return {
+        phase: 'setup',
         currentPlayerIndex: 0,
         players: state.players.map((p) => ({ ...p, picks: [] })),
       }
