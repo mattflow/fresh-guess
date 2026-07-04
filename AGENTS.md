@@ -23,7 +23,30 @@ Every change must follow this workflow - no direct commits to `main`. This appli
 2. **Branch off fresh `origin/main`.** The worktree's branch (step 1) must start from `origin/main`. Keep it rebased on `origin/main` (not merged) as you go.
 3. **Open a PR when done.** The PR description must list explicit **acceptance criteria** for the change.
 4. **Validate every acceptance criterion locally with e2e tests** before considering the work complete — use / extend the `scripts/*.mjs` browser tests (`e2e.mjs`, `verify-features.mjs`, `verify-solo.mjs`) so each criterion maps to a passing check. Add new e2e coverage when a criterion isn't covered by an existing script.
-5. **Attach screenshots to the PR when relevant** (any UI-visible change) — use `scripts/shots.mjs` to capture them.
+5. **Attach screenshots to the PR when relevant** (any UI-visible change). Capture them with `scripts/shots.mjs` (or an ad-hoc Playwright script); it writes PNGs to `/tmp`. To actually **embed** them in the PR body from the CLI (there is no `gh` command to upload markdown attachments), host the images on the repo's long-lived orphan `assets` branch and reference their raw URLs - this keeps binaries off `main` and off feature branches while still rendering (the repo is **public**, so `raw.githubusercontent.com` URLs display inline):
+
+   ```bash
+   # From inside your worktree. Adds each screenshot as a blob and APPENDS it to
+   # the existing `assets` tree (preserving earlier PRs' images), commits with the
+   # old assets tip as parent, and pushes - none of this touches your working tree
+   # or feature branch. Prefix filenames with your branch name to avoid collisions.
+   git fetch origin assets 2>/dev/null || true
+   d=$(git hash-object -w /tmp/fg-myfeature-dark.png)
+   l=$(git hash-object -w /tmp/fg-myfeature-light.png)
+   if git rev-parse -q --verify FETCH_HEAD >/dev/null; then
+     parent=$(git rev-parse FETCH_HEAD); base=$(git ls-tree "$parent^{tree}"); parent_arg="-p $parent"
+   else
+     parent=""; base=""; parent_arg=""   # first-ever push: orphan commit, empty base
+   fi
+   tree=$( { [ -n "$base" ] && printf '%s\n' "$base"
+             printf '100644 blob %s\tmyfeature-dark.png\n'  "$d"
+             printf '100644 blob %s\tmyfeature-light.png\n' "$l"; } | git mktree )
+   commit=$(git commit-tree "$tree" $parent_arg -m "Screenshots: myfeature (PR #NN)")
+   git update-ref refs/heads/assets "$commit"
+   git push origin assets
+   ```
+
+   Then embed in the PR body with `![alt](https://raw.githubusercontent.com/mattflow/fresh-guess/assets/myfeature-dark.png)` (verify each URL returns `200 image/png` via `curl -sI` first). Screenshots are intentionally **never committed to `main`** - `shots.mjs` writing to `/tmp` is deliberate.
 6. **After submitting the PR, spawn a fresh-eyes subagent to review the diff.** Launch a subagent with **no prior context** from this task (it must not inherit your reasoning or assumptions) and have it review the PR's changes cold - correctness, regressions, and adherence to the conventions in this file. Then **address its findings**: fix real issues and push the follow-up, or explicitly note why a finding is a non-issue.
 
 ### Scaffolding provenance
