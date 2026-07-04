@@ -19,10 +19,11 @@ Before editing files for a substantial task:
 
 Every change must follow this workflow — no direct commits to `main`:
 
-1. **Branch off fresh `origin/main`.** Run `git fetch origin` first, then create the work branch rebased on `origin/main` (e.g. `git checkout -b <branch> origin/main`). Keep it rebased on `origin/main` (not merged) as you go.
-2. **Open a PR when done.** The PR description must list explicit **acceptance criteria** for the change.
-3. **Validate every acceptance criterion locally with e2e tests** before considering the work complete — use / extend the `scripts/*.mjs` browser tests (`e2e.mjs`, `verify-features.mjs`, `verify-solo.mjs`) so each criterion maps to a passing check. Add new e2e coverage when a criterion isn't covered by an existing script.
-4. **Attach screenshots to the PR when relevant** (any UI-visible change) — use `scripts/shots.mjs` to capture them.
+1. **Always work in an isolated `git worktree`.** Never edit files in the primary checkout — another agent may be working there concurrently. Create a dedicated worktree with its own branch off fresh `origin/main` (run `git fetch origin` first), e.g. `git worktree add -b <branch> ../fresh-guess-worktrees/<branch> origin/main`. Do all commits, tests, and screenshots inside that worktree, and `git worktree remove` it once the PR is merged. This keeps parallel work fully isolated.
+2. **Branch off fresh `origin/main`.** The worktree's branch (step 1) must start from `origin/main`. Keep it rebased on `origin/main` (not merged) as you go.
+3. **Open a PR when done.** The PR description must list explicit **acceptance criteria** for the change.
+4. **Validate every acceptance criterion locally with e2e tests** before considering the work complete — use / extend the `scripts/*.mjs` browser tests (`e2e.mjs`, `verify-features.mjs`, `verify-solo.mjs`) so each criterion maps to a passing check. Add new e2e coverage when a criterion isn't covered by an existing script.
+5. **Attach screenshots to the PR when relevant** (any UI-visible change) — use `scripts/shots.mjs` to capture them.
 
 ### Scaffolding provenance
 
