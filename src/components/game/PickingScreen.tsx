@@ -30,6 +30,13 @@ export default function PickingScreen() {
     if (peeking && picks.length) ensure(picks.map((p) => p.objectID))
   }, [peeking, picks, ensure])
 
+  // The picking screen stays mounted across turns (only currentPlayerIndex
+  // changes), so clear the search box whenever the turn switches - each player
+  // starts with an empty search instead of inheriting the last one's query.
+  useEffect(() => {
+    setQuery('')
+  }, [idx, setQuery])
+
   if (!player) return null
 
   // Solo play needs no hand-off; multiplayer shows a "pass the phone" gate so
