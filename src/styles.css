@@ -203,24 +203,29 @@ body {
   color: var(--fg-kicker);
 }
 
-/* One-time credential warm-up banner - slim, pinned to the top, theme-adaptive.
+/* One-time credential warm-up alert - a solid, self-contained toast pinned near
+   the top, theme-adaptive. Being fully opaque (a real alert surface rather than a
+   fading gradient) means it reads as intentional when it overlaps page content.
    Respects the iOS safe-area top inset; unmounts once credentials are ready.
    Purely informational, so it never intercepts taps (pointer-events: none). */
 .fg-warmup {
   pointer-events: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: max(0.75rem, env(safe-area-inset-top));
+  left: 0.75rem;
+  right: 0.75rem;
   z-index: 50;
   margin: 0 auto;
-  max-width: 28rem;
-  padding: max(0.6rem, env(safe-area-inset-top)) 1rem 0.6rem;
+  max-width: 26rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--fg-card-border);
+  border-radius: 0.85rem;
+  background: linear-gradient(180deg, var(--fg-card-from) 0%, var(--fg-card-to) 100%);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.45);
   text-align: center;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--fg-muted);
-  background: linear-gradient(180deg, var(--fg-card-from) 0%, transparent 100%);
 }
 
 /* Subtle entrance */
