@@ -96,7 +96,7 @@ function reducer(state: GameState, action: Action): GameState {
 
     // Abandon an in-progress game and return to setup, keeping the current
     // players and their names (picks cleared). Unlike `newGame`, no reset to
-    // blank players — used by the mid-game "New game" control.
+    // blank players - used by the mid-game "Start over" control.
     case 'restartSetup':
       return {
         phase: 'setup',

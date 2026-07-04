@@ -57,13 +57,15 @@ try {
   await page.getByText(/Pass the phone to/).waitFor({ timeout: 8000 })
   log('✓ reached the pass gate')
 
-  const newGameBtn = page.getByRole('button', { name: /New game/ })
-  if (!(await newGameBtn.isVisible())) fail('New game control not visible on pass gate')
+  // Collapsed control is "↺ Start over"; the confirm action button is exactly
+  // "Start over" (no ↺), so /^Start over$/ targets the action, /Start over/ the collapsed.
+  const startOverBtn = page.getByRole('button', { name: /Start over/ })
+  if (!(await startOverBtn.isVisible())) fail('Start over control not visible on pass gate')
 
-  await newGameBtn.click()
+  await startOverBtn.click()
   // Inline confirm should appear (no native dialog).
-  await page.getByText('Start over?').waitFor({ timeout: 4000 })
-  log('✓ tapping New game reveals inline "Start over?" confirm')
+  await page.getByText('End this game?').waitFor({ timeout: 4000 })
+  log('✓ tapping Start over reveals inline "End this game?" confirm')
 
   await page.getByRole('button', { name: /^Start over$/ }).click()
 
@@ -96,24 +98,24 @@ try {
   const picksBefore = await page.getByRole('button', { name: 'Remove' }).count()
   if (picksBefore !== 3) fail(`expected 3 picks before cancel, got ${picksBefore}`)
 
-  await page.getByRole('button', { name: /New game/ }).click()
-  await page.getByText('Start over?').waitFor({ timeout: 4000 })
+  await page.getByRole('button', { name: /Start over/ }).click()
+  await page.getByText('End this game?').waitFor({ timeout: 4000 })
   await page.getByRole('button', { name: /Cancel/ }).click()
   // Confirm dismissed, still on picking screen with picks intact.
   const picksAfterCancel = await page.getByRole('button', { name: 'Remove' }).count()
-  const confirmGone = !(await page.getByText('Start over?').isVisible().catch(() => false))
+  const confirmGone = !(await page.getByText('End this game?').isVisible().catch(() => false))
   if (!confirmGone) fail('confirm did not dismiss on Cancel')
   if (picksAfterCancel !== 3) fail(`Cancel lost picks: expected 3, got ${picksAfterCancel}`)
   if (confirmGone && picksAfterCancel === 3)
     log('✓ Cancel dismisses the confirm and keeps picks intact')
 
   // Now actually start over from the picking screen.
-  await page.getByRole('button', { name: /New game/ }).click()
+  await page.getByRole('button', { name: /Start over/ }).click()
   await page.getByRole('button', { name: /^Start over$/ }).click()
   await page.getByRole('button', { name: /Start game/ }).waitFor({ timeout: 6000 })
   const q1 = await page.getByPlaceholder('Player 1 name').inputValue()
   if (q1 !== 'Ada') fail(`names not preserved after picking-screen restart: got "${q1}"`)
-  else log('✓ New game from picking screen returns to setup with names preserved')
+  else log('✓ Start over from picking screen returns to setup with names preserved')
 
   if (errors.length) fail('page errors: ' + errors.join(' | '))
   log(process.exitCode ? '\n✗ verify-restart finished with failures' : '\n✓ verify-restart passed')
