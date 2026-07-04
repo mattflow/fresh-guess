@@ -2,10 +2,6 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
 
-// Apply a saved light/dark choice before first paint to avoid a theme flash.
-// No saved choice (or "system") => leave it to the prefers-color-scheme media query.
-const THEME_INIT = `(function(){try{var m=localStorage.getItem('fg-theme');if(m==='light'||m==='dark'){document.documentElement.dataset.theme=m;}}catch(e){}})();`
-
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -20,9 +16,8 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <HeadContent />
       </head>
       <body>

@@ -15,6 +15,15 @@ Before editing files for a substantial task:
 
 > The repo began as the blank TanStack Start file-router starter (see scaffolding provenance below), then the game was built on top of it. The scaffolding/stack notes in this file remain accurate; the game-specific architecture is documented under **"Fresh Guess game"** below.
 
+### Contribution workflow (always)
+
+Every change must follow this workflow — no direct commits to `main`:
+
+1. **Branch off fresh `origin/main`.** Run `git fetch origin` first, then create the work branch rebased on `origin/main` (e.g. `git checkout -b <branch> origin/main`). Keep it rebased on `origin/main` (not merged) as you go.
+2. **Open a PR when done.** The PR description must list explicit **acceptance criteria** for the change.
+3. **Validate every acceptance criterion locally with e2e tests** before considering the work complete — use / extend the `scripts/*.mjs` browser tests (`e2e.mjs`, `verify-features.mjs`, `verify-solo.mjs`) so each criterion maps to a passing check. Add new e2e coverage when a criterion isn't covered by an existing script.
+4. **Attach screenshots to the PR when relevant** (any UI-visible change) — use `scripts/shots.mjs` to capture them.
+
 ### Scaffolding provenance
 
 Created with the TanStack CLI (run in this directory; contents then moved up so the repo root is the app):
@@ -42,7 +51,7 @@ npx @tanstack/intent@latest list      # enumerates available local skills (route
 - **Scores hidden by default** while picking — never auto-sent to the client or stored in `localStorage`. There is an **opt-in "Peek scores" toggle** (per turn, default off) that fetches scores on demand to show them on results + a running total. Each new turn resets to hidden.
 - **Single round** + "Play again" (keep players) / "New game" (reset).
 - **Persistence:** an in-progress game survives a refresh via `localStorage` (key `fresh-guess:game`).
-- **Theming:** light/dark, **defaulting to system** preference, with a top-right toggle cycling system → light → dark (persisted in `localStorage` key `fg-theme`; pre-paint script in `__root.tsx` avoids flash).
+- **Theming:** light/dark, **always following the system** (`prefers-color-scheme`) preference. There is no in-app theme selector — theming is purely CSS media-query driven, so there's no stored choice and no pre-paint script.
 
 ### How movie scores are sourced (no RT API)
 Rotten Tomatoes has no public API. RT's own site embeds Algolia search credentials in a runtime global, `window.RottenTomatoes.thirdParty.algoliaSearch` → `{ aId, sId }` (Algolia **app id** + **search-only key**). We read them server-side with **Playwright**, then query Algolia.
@@ -68,14 +77,13 @@ Key files:
 - `src/lib/game.functions.ts` — `createServerFn` RPC wrappers (`searchMoviesFn`, `revealScoresFn`) with Zod validators; lazy-`import()` the server-only module inside handlers.
 - `src/lib/game-types.ts` — shared client-safe types + `TARGET = 160`, `PICKS_PER_PLAYER = 3`.
 - `src/components/game/` — `GameProvider` (reducer + localStorage), `PlayerSetup`, `PassDevice` (hand-off gate so the next player can't see prior picks), `PickingScreen` (incl. the Peek toggle + running total), `MovieSearch` (debounced `useServerFn` search; `ScoreBadge` for peeked scores), `RevealScreen` (fetches scores, computes closest-to-160, tie-aware), `useScores.ts` (lazy on-demand score fetch/cache shared by Peek).
-- `src/components/ThemeToggle.tsx` — system/light/dark toggle.
-- Routes: `src/routes/index.tsx` is the game (mounts `GameProvider` + `ThemeToggle`, switches on phase). `__root.tsx` is a minimal HTML shell with the pre-paint theme script — no header/footer/nav. There are no other routes.
+- Routes: `src/routes/index.tsx` is the game (mounts `GameProvider`, switches on phase). `__root.tsx` is a minimal HTML shell — no header/footer/nav, no theme script. There are no other routes.
 - `scripts/` — dev tooling, not part of the app runtime: `probe-rt.mjs` (re-discover keys/index/fields), `e2e.mjs` (full browser smoke test against a running dev server), `shots.mjs` (screenshots).
 
 ### Styling
 The original starter's demo design system (ocean theme, `demo-*`/`island-*` classes, old `Header`/`Footer`, landing + about pages) was **removed** — the app is just the game. `src/styles.css` is small and purpose-built: Tailwind v4 import + a handful of `fg-*` classes (`fg-card`, `fg-btn` + `-primary`/`-ghost`/`-danger`, `fg-input`, `fg-pill`, `fg-kicker`, `fg-rise`) and two theme-independent accent tokens (`--color-splat` RT-red, `--color-fresh` green).
 
-**Light/dark theming** is driven by `--fg-*` CSS variables defined three times in `styles.css`: `:root` (light default), `@media (prefers-color-scheme: dark) :root:not([data-theme=light])` (system dark), and `:root[data-theme=dark]` (manual dark). Components reference `var(--fg-muted)`, `var(--fg-danger)`, etc. — **don't hardcode `text-zinc-*`/hex colors** in components or they won't adapt. `ThemeToggle` (`src/components/ThemeToggle.tsx`) sets/removes `data-theme` and persists the choice.
+**Light/dark theming** is driven by `--fg-*` CSS variables defined twice in `styles.css`: `:root` (light default) and `@media (prefers-color-scheme: dark) :root` (system dark). There is **no manual override** — the app always follows the OS preference. Components reference `var(--fg-muted)`, `var(--fg-danger)`, etc. — **don't hardcode `text-zinc-*`/hex colors** in components or they won't adapt.
 
 ### Hidden-score integrity (important when editing)
 - `searchMoviesFn` must **never** return scores. Scores only come from `revealScoresFn` — called on the reveal screen, and on demand by the opt-in **Peek** feature (`useScores` hook, `src/components/game/useScores.ts`).
@@ -111,7 +119,6 @@ src/
     game.functions.ts # createServerFn wrappers (search / reveal)
     rt-algolia.server.ts  # server-only: Playwright key scrape + Algolia
   components/
-    ThemeToggle.tsx    # system/light/dark toggle
     game/              # GameProvider, PlayerSetup, PassDevice, PickingScreen,
                        #   MovieSearch, RevealScreen, useScores
 scripts/              # probe-rt.mjs, e2e.mjs, shots.mjs (dev tooling)
@@ -174,7 +181,7 @@ Verified end-to-end inside the built container: serves `/`, accepts an arbitrary
 
 ### Testing the game
 - `node scripts/e2e.mjs` — full browser smoke test (register → pick → pass → reveal → play again + persistence) against a running `pnpm dev`.
-- `node scripts/verify-features.mjs` — checks the Peek-scores toggle and light/dark theming (incl. system default + persistence).
+- `node scripts/verify-features.mjs` — checks the Peek-scores toggle and system-driven light/dark theming (no selector; follows OS `prefers-color-scheme`).
 - `node scripts/verify-solo.mjs` — checks single-player mode (Play solo, no pass gate, solo reveal, play again).
 - `node scripts/probe-rt.mjs` — re-discover RT Algolia keys/index/fields if RT changes.
 
