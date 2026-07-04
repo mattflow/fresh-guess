@@ -8,7 +8,7 @@ export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   return (
-    <main className="mx-auto w-full max-w-md px-4 pb-16 pt-16">
+    <main>
       <GameProvider>
         <GamePhase />
       </GameProvider>
@@ -18,13 +18,12 @@ function Home() {
 
 function GamePhase() {
   const { state } = useGame()
-  switch (state.phase) {
-    case 'picking':
-      return <PickingScreen />
-    case 'reveal':
-      return <RevealScreen />
-    case 'setup':
-    default:
-      return <PlayerSetup />
-  }
+  // The picking screen owns the full viewport (fixed, keyboard-aware layout), so
+  // it renders bare. Setup/reveal keep the padded, centered column.
+  if (state.phase === 'picking') return <PickingScreen />
+  return (
+    <div className="mx-auto w-full max-w-md px-4 pb-16 pt-16">
+      {state.phase === 'reveal' ? <RevealScreen /> : <PlayerSetup />}
+    </div>
+  )
 }

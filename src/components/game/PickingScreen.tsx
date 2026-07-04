@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { PICKS_PER_PLAYER, TARGET, type SelectedMovie } from '../../lib/game-types'
 import { useGame } from './GameProvider'
-import MovieSearch, { ScoreBadge } from './MovieSearch'
 import PassDevice from './PassDevice'
+import PicksStrip from './PicksStrip'
+import SearchResults from './SearchResults'
+import { useKeyboardViewport } from './useKeyboardViewport'
+import { useMovieSearch } from './useMovieSearch'
 import { useScores } from './useScores'
 
 export default function PickingScreen() {
@@ -12,6 +15,9 @@ export default function PickingScreen() {
   const [armedIndex, setArmedIndex] = useState<number | null>(null)
   const [peeking, setPeeking] = useState(false)
   const { scores, ensure } = useScores()
+  const { query, setQuery, results, status } = useMovieSearch({ peeking, ensureScores: ensure })
+  // Keep the fixed layout sized to the area above the on-screen keyboard (iOS Safari).
+  useKeyboardViewport()
 
   const isSolo = state.players.length === 1
   const idx = state.currentPlayerIndex
@@ -58,100 +64,88 @@ export default function PickingScreen() {
   const allKnown = picks.length > 0 && knownScores.length === picks.length
 
   return (
-    <section className="fg-rise flex flex-col gap-4">
-      <header>
-        <p className="fg-kicker">
-          {isSolo
-            ? 'Solo round'
-            : `${player.name}'s turn · Player ${idx + 1} of ${state.players.length}`}
-        </p>
-        <h2 className="mt-1 text-2xl font-extrabold tracking-tight">
-          Pick {PICKS_PER_PLAYER} movies for {TARGET}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--fg-muted)]">
-          {peeking
-            ? 'Peeking at scores — no shame in a little research.'
-            : 'Scores stay hidden — go with your gut.'}{' '}
-          {picks.length}/{PICKS_PER_PLAYER} chosen.
-        </p>
+    <section
+      className="fixed inset-x-0 top-0 mx-auto flex w-full max-w-md flex-col overflow-hidden"
+      style={{
+        height: 'var(--app-vh, 100dvh)',
+        transform: 'translateY(var(--app-vtop, 0px))',
+      }}
+    >
+      {/* ===== Top chrome — pinned, never scrolls ===== */}
+      <header className="flex-none space-y-3 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="truncate text-base font-extrabold tracking-tight">
+            Pick {PICKS_PER_PLAYER} for {TARGET}
+            <span className="ml-1 font-semibold text-[var(--fg-muted)] tabular-nums">
+              · {picks.length}/{PICKS_PER_PLAYER}
+            </span>
+          </h2>
+          <span className="shrink-0 truncate text-xs text-[var(--fg-muted)]">
+            {isSolo ? 'Solo round' : player.name || `Player ${idx + 1}`}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            className={'fg-btn-sm ' + (peeking ? 'fg-btn-primary' : 'fg-btn-ghost')}
+            onClick={() => setPeeking((v) => !v)}
+            aria-pressed={peeking}
+          >
+            {peeking ? '🙈 Hide scores' : '👀 Peek scores'}
+          </button>
+          {peeking && picks.length > 0 && (
+            <div className="text-lg font-extrabold tabular-nums">
+              {allKnown ? total : `${total}…`}
+              <span className="text-xs font-semibold text-[var(--fg-muted)]"> / {TARGET}</span>
+            </div>
+          )}
+        </div>
+
+        <PicksStrip picks={picks} peeking={peeking} scores={scores} onRemove={toggle} />
+
+        <input
+          className="fg-input"
+          type="search"
+          placeholder="Search a movie title…"
+          value={query}
+          autoComplete="off"
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </header>
 
-      <div className="flex items-center justify-between gap-3">
+      {/* ===== Results — the only scroll region ===== */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3">
+        <SearchResults
+          results={results}
+          status={status}
+          query={query}
+          picks={picks}
+          onToggle={toggle}
+          peeking={peeking}
+          scores={scores}
+          // Keep the search input focused (keyboard open) across picks.
+          onResultPointerDown={(e) => e.preventDefault()}
+        />
+      </div>
+
+      {/* ===== Lock in — pinned above the keyboard / home indicator ===== */}
+      <div className="flex-none border-t border-[var(--fg-card-border)] px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
-          className={'fg-btn ' + (peeking ? 'fg-btn-primary' : 'fg-btn-ghost')}
-          onClick={() => setPeeking((v) => !v)}
-          aria-pressed={peeking}
+          className="fg-btn fg-btn-primary w-full py-4 text-base shadow-lg shadow-black/40"
+          disabled={!isFull}
+          onClick={lockIn}
         >
-          {peeking ? '🙈 Hide scores' : '👀 Peek scores'}
+          {isFull
+            ? isSolo
+              ? 'Reveal my score →'
+              : isLast
+                ? 'Lock in & reveal results →'
+                : 'Lock in & pass the phone →'
+            : `Pick ${PICKS_PER_PLAYER - picks.length} more`}
         </button>
-        {peeking && picks.length > 0 && (
-          <div className="text-right">
-            <div className="text-xl font-extrabold tabular-nums">
-              {allKnown ? total : `${total}…`}
-              <span className="text-sm font-semibold text-[var(--fg-muted)]"> / {TARGET}</span>
-            </div>
-            {allKnown && (
-              <div className="text-xs text-[var(--fg-muted)]">
-                {Math.abs(total - TARGET)} away
-              </div>
-            )}
-          </div>
-        )}
       </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {Array.from({ length: PICKS_PER_PLAYER }).map((_, slot) => {
-          const m = picks[slot]
-          return (
-            <div
-              key={slot}
-              className="fg-card flex min-h-[6.5rem] flex-col items-center justify-center gap-1 p-2 text-center"
-            >
-              {m ? (
-                <>
-                  {peeking && <ScoreBadge score={scores[m.objectID]} />}
-                  <span className="line-clamp-3 text-xs font-semibold">{m.title}</span>
-                  <button
-                    type="button"
-                    className="fg-pill mt-1 cursor-pointer text-[var(--fg-danger)]"
-                    onClick={() => toggle(m)}
-                  >
-                    Remove
-                  </button>
-                </>
-              ) : (
-                <span className="text-2xl text-[var(--fg-faint)]" aria-hidden>
-                  +
-                </span>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      <MovieSearch
-        picks={picks}
-        onToggle={toggle}
-        peeking={peeking}
-        scores={scores}
-        ensureScores={ensure}
-      />
-
-      <button
-        type="button"
-        className="fg-btn fg-btn-primary sticky bottom-4 mt-1 py-4 text-base shadow-lg shadow-black/40"
-        disabled={!isFull}
-        onClick={lockIn}
-      >
-        {isFull
-          ? isSolo
-            ? 'Reveal my score →'
-            : isLast
-              ? 'Lock in & reveal results →'
-              : 'Lock in & pass the phone →'
-          : `Pick ${PICKS_PER_PLAYER - picks.length} more`}
-      </button>
     </section>
   )
 }
