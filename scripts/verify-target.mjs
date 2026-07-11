@@ -89,6 +89,28 @@ try {
   if (from160 > 0) fail('reveal still shows the hardcoded 160')
   else log('✓ no stale "from 160" on the reveal')
 
+  // --- Setup-phase reload keeps a custom target in the input (issue: the
+  // useState seed runs before hydration restores the saved target) ---
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'fresh-guess:game',
+      JSON.stringify({
+        phase: 'setup',
+        currentPlayerIndex: 0,
+        players: [
+          { id: 'p1', name: 'Ada', picks: [] },
+          { id: 'p2', name: 'Linus', picks: [] },
+        ],
+        target: 175,
+      }),
+    )
+  })
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await settle()
+  const restored = await page.getByLabel('Target score').inputValue()
+  if (restored !== '175') fail(`setup-phase reload lost the custom target (input = "${restored}")`)
+  else log('✓ setup-phase reload restores the custom target into the input')
+
   // --- Backward compat: an old save with no `target` falls back to 160 ---
   await page.evaluate(() => {
     localStorage.setItem(

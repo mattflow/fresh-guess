@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TARGET, TARGET_MAX, TARGET_MIN } from '../../lib/game-types'
 import { newId, useGame } from './GameProvider'
 
@@ -9,6 +9,15 @@ export default function PlayerSetup() {
   // Editable target for this game. Held as a string so the field can be cleared
   // mid-edit; parsed + range-checked before it can start a game.
   const [targetInput, setTargetInput] = useState(String(state.target))
+
+  // Keep the field in sync when the restored state's target changes underneath
+  // us. On a setup-phase reload, PlayerSetup mounts against the default state
+  // (target 160) and only then does hydration restore a saved custom target —
+  // without this the input would keep showing 160 and Start would send it.
+  useEffect(() => {
+    setTargetInput(String(state.target))
+  }, [state.target])
+
   const target = Number(targetInput)
   const targetValid =
     targetInput.trim() !== '' &&
