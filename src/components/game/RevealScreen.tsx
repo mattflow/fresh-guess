@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import { revealScoresFn } from '../../lib/game.functions'
-import { TARGET, type PlayerResult } from '../../lib/game-types'
+import { type PlayerResult } from '../../lib/game-types'
 import { newId, useGame } from './GameProvider'
 
 export default function RevealScreen() {
   const { state, dispatch } = useGame()
+  const target = state.target
   const reveal = useServerFn(revealScoresFn)
   const [scores, setScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState(false)
@@ -56,7 +57,7 @@ export default function RevealScreen() {
       player,
       scores: perPick,
       total,
-      distance: Math.abs(total - TARGET),
+      distance: Math.abs(total - target),
       isWinner: false,
     }
   })
@@ -71,9 +72,9 @@ export default function RevealScreen() {
   return (
     <section className="fg-rise flex flex-col gap-4">
       <header className="text-center">
-        <p className="fg-kicker">Target {TARGET}</p>
+        <p className="fg-kicker">Target {target}</p>
         {isSolo ? (
-          <SoloHeading total={ranked[0].total} distance={ranked[0].distance} />
+          <SoloHeading total={ranked[0].total} distance={ranked[0].distance} target={target} />
         ) : (
           <>
             <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
@@ -88,8 +89,8 @@ export default function RevealScreen() {
             </h2>
             <p className="mt-1 text-sm text-[var(--fg-muted)]">
               {winners.length > 1
-                ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} from ${TARGET}.`
-                : `${winners[0].total} — just ${winners[0].distance} from ${TARGET}.`}
+                ? `${winners.map((w) => w.player.name).join(' & ')} tied at ${winners[0].distance} from ${target}.`
+                : `${winners[0].total} — just ${winners[0].distance} from ${target}.`}
             </p>
           </>
         )}
@@ -108,7 +109,7 @@ export default function RevealScreen() {
               </h3>
               <div className="text-right">
                 <div className="text-2xl font-extrabold">{r.total}</div>
-                <div className="text-xs text-[var(--fg-muted)]">{r.distance} from {TARGET}</div>
+                <div className="text-xs text-[var(--fg-muted)]">{r.distance} from {target}</div>
               </div>
             </div>
             <ul className="mt-3 flex flex-col gap-1.5">
@@ -148,16 +149,24 @@ export default function RevealScreen() {
   )
 }
 
-function soloRating(distance: number): { emoji: string; text: string } {
-  if (distance === 0) return { emoji: '🎯', text: 'Bullseye — exactly 160!' }
+function soloRating(distance: number, target: number): { emoji: string; text: string } {
+  if (distance === 0) return { emoji: '🎯', text: `Bullseye — exactly ${target}!` }
   if (distance <= 5) return { emoji: '🔥', text: 'So close!' }
   if (distance <= 15) return { emoji: '🙌', text: 'Nicely done!' }
   if (distance <= 30) return { emoji: '👏', text: 'Not bad!' }
   return { emoji: '🎬', text: 'Room to improve — play again!' }
 }
 
-function SoloHeading({ total, distance }: { total: number; distance: number }) {
-  const rating = soloRating(distance)
+function SoloHeading({
+  total,
+  distance,
+  target,
+}: {
+  total: number
+  distance: number
+  target: number
+}) {
+  const rating = soloRating(distance, target)
   return (
     <>
       <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
@@ -165,7 +174,7 @@ function SoloHeading({ total, distance }: { total: number; distance: number }) {
       </h2>
       <p className="mt-1 text-sm text-[var(--fg-muted)]">
         You scored <span className="text-[var(--color-fresh)]">{total}</span> — {distance} from{' '}
-        {TARGET}.
+        {target}.
       </p>
     </>
   )

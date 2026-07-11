@@ -1,10 +1,41 @@
-import { TARGET } from '../../lib/game-types'
+import { useEffect, useState } from 'react'
+import { TARGET, TARGET_MAX, TARGET_MIN } from '../../lib/game-types'
 import { newId, useGame } from './GameProvider'
 
 export default function PlayerSetup() {
   const { state, dispatch } = useGame()
   const namedCount = state.players.filter((p) => p.name.trim()).length
-  const canStart = state.players.length >= 1 && namedCount === state.players.length
+
+  // Editable target for this game. Held as a string so the field can be cleared
+  // mid-edit; parsed + range-checked before it can start a game.
+  const [targetInput, setTargetInput] = useState(String(state.target))
+
+  // Keep the field in sync when the restored state's target changes underneath
+  // us. On a setup-phase reload, PlayerSetup mounts against the default state
+  // (target 160) and only then does hydration restore a saved custom target —
+  // without this the input would keep showing 160 and Start would send it.
+  useEffect(() => {
+    setTargetInput(String(state.target))
+  }, [state.target])
+
+  const target = Number(targetInput)
+  const targetValid =
+    targetInput.trim() !== '' &&
+    Number.isInteger(target) &&
+    target >= TARGET_MIN &&
+    target <= TARGET_MAX
+
+  const clampTarget = () => {
+    const n = Number(targetInput)
+    if (!Number.isFinite(n) || targetInput.trim() === '') {
+      setTargetInput(String(TARGET))
+      return
+    }
+    setTargetInput(String(Math.min(TARGET_MAX, Math.max(TARGET_MIN, Math.round(n)))))
+  }
+
+  const canStart =
+    state.players.length >= 1 && namedCount === state.players.length && targetValid
 
   return (
     <section className="fg-rise">
@@ -14,8 +45,8 @@ export default function PlayerSetup() {
         </h1>
         <p className="mt-2 text-sm text-[var(--fg-muted)]">
           Secretly pick 3 movies. Get their Rotten Tomatoes scores closest to{' '}
-          <strong className="text-[var(--fg-text)]">{TARGET}</strong>. No peeking — play solo or
-          pass the phone, closest wins.
+          <strong className="text-[var(--fg-text)]">{targetValid ? target : TARGET}</strong>. No
+          peeking — play solo or pass the phone, closest wins.
         </p>
       </header>
 
@@ -56,17 +87,41 @@ export default function PlayerSetup() {
         </button>
       </div>
 
+      <div className="fg-card mt-4 p-5">
+        <p className="fg-kicker">Target score</p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="fg-pill shrink-0">🎯</span>
+          <input
+            className="fg-input"
+            type="number"
+            inputMode="numeric"
+            min={TARGET_MIN}
+            max={TARGET_MAX}
+            step={1}
+            aria-label="Target score"
+            value={targetInput}
+            onChange={(e) => setTargetInput(e.target.value)}
+            onBlur={clampTarget}
+          />
+        </div>
+        <p className="mt-2 text-xs text-[var(--fg-muted)]">
+          The number to aim for ({TARGET_MIN}–{TARGET_MAX}). Default {TARGET}.
+        </p>
+      </div>
+
       <button
         type="button"
         className="fg-btn fg-btn-primary mt-4 w-full py-4 text-base"
         disabled={!canStart}
-        onClick={() => dispatch({ type: 'startGame' })}
+        onClick={() => dispatch({ type: 'startGame', target })}
       >
         {state.players.length === 1 ? 'Play solo →' : 'Start game →'}
       </button>
       {!canStart && (
         <p className="mt-2 text-center text-xs text-[var(--fg-muted)]">
-          Name everyone to start. One player is fine for a solo challenge.
+          {targetValid
+            ? 'Name everyone to start. One player is fine for a solo challenge.'
+            : `Set a target between ${TARGET_MIN} and ${TARGET_MAX} to start.`}
         </p>
       )}
     </section>

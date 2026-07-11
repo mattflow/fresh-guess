@@ -8,6 +8,7 @@ import {
 } from 'react'
 import {
   PICKS_PER_PLAYER,
+  TARGET,
   type GameState,
   type Player,
   type SelectedMovie,
@@ -26,6 +27,7 @@ const initialState: GameState = {
   phase: 'setup',
   players: [emptyPlayer('p1'), emptyPlayer('p2')],
   currentPlayerIndex: 0,
+  target: TARGET,
 }
 
 type Action =
@@ -33,7 +35,7 @@ type Action =
   | { type: 'addPlayer'; id: string }
   | { type: 'removePlayer'; id: string }
   | { type: 'setName'; id: string; name: string }
-  | { type: 'startGame' }
+  | { type: 'startGame'; target: number }
   | { type: 'togglePick'; movie: SelectedMovie }
   | { type: 'lockIn' }
   | { type: 'playAgain' }
@@ -66,6 +68,7 @@ function reducer(state: GameState, action: Action): GameState {
         phase: 'picking',
         currentPlayerIndex: 0,
         players: state.players.map((p) => ({ ...p, picks: [] })),
+        target: action.target,
       }
 
     case 'togglePick': {
@@ -92,6 +95,7 @@ function reducer(state: GameState, action: Action): GameState {
         phase: 'picking',
         currentPlayerIndex: 0,
         players: state.players.map((p) => ({ ...p, picks: [] })),
+        target: state.target,
       }
 
     // Abandon an in-progress game and return to setup, keeping the current
@@ -102,6 +106,7 @@ function reducer(state: GameState, action: Action): GameState {
         phase: 'setup',
         currentPlayerIndex: 0,
         players: state.players.map((p) => ({ ...p, picks: [] })),
+        target: state.target,
       }
 
     case 'newGame':
@@ -109,6 +114,7 @@ function reducer(state: GameState, action: Action): GameState {
         phase: 'setup',
         currentPlayerIndex: 0,
         players: [emptyPlayer(action.ids[0]), emptyPlayer(action.ids[1])],
+        target: TARGET,
       }
 
     default:
@@ -139,7 +145,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return
       const parsed = JSON.parse(raw)
-      if (isValidState(parsed)) dispatch({ type: 'hydrate', state: parsed })
+      if (isValidState(parsed)) {
+        // Saves written before the target was editable have no `target` field —
+        // fall back to the default so older in-progress games still load.
+        const target = typeof parsed.target === 'number' ? parsed.target : TARGET
+        dispatch({ type: 'hydrate', state: { ...parsed, target } })
+      }
     } catch {
       // ignore corrupt storage
     }
