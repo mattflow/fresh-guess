@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PICKS_PER_PLAYER, TARGET, type SelectedMovie } from '../../lib/game-types'
+import { PICKS_PER_PLAYER, type SelectedMovie } from '../../lib/game-types'
 import EndGameButton from './EndGameButton'
 import { useGame } from './GameProvider'
 import PassDevice from './PassDevice'
@@ -47,6 +47,7 @@ export default function PickingScreen() {
         name={player.name || `Player ${idx + 1}`}
         playerNumber={idx + 1}
         totalPlayers={state.players.length}
+        target={state.target}
         onReady={() => {
           setPeeking(false) // every turn starts with scores hidden
           setArmedIndex(idx)
@@ -83,7 +84,7 @@ export default function PickingScreen() {
       <header className="flex-none space-y-3 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="truncate text-base font-extrabold tracking-tight">
-            Pick {PICKS_PER_PLAYER} for {TARGET}
+            Pick {PICKS_PER_PLAYER} for {state.target}
             <span className="ml-1 font-semibold text-[var(--fg-muted)] tabular-nums">
               · {picks.length}/{PICKS_PER_PLAYER}
             </span>
@@ -106,7 +107,7 @@ export default function PickingScreen() {
             {peeking && picks.length > 0 && (
               <div className="text-lg font-extrabold tabular-nums">
                 {allKnown ? total : `${total}…`}
-                <span className="text-xs font-semibold text-[var(--fg-muted)]"> / {TARGET}</span>
+                <span className="text-xs font-semibold text-[var(--fg-muted)]"> / {state.target}</span>
               </div>
             )}
             <EndGameButton />

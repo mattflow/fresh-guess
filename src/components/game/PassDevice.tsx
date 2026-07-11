@@ -1,4 +1,3 @@
-import { TARGET } from '../../lib/game-types'
 import EndGameButton from './EndGameButton'
 
 /** Hand-off gate shown before each turn so the next player can't see prior picks. */
@@ -6,11 +5,13 @@ export default function PassDevice({
   name,
   playerNumber,
   totalPlayers,
+  target,
   onReady,
 }: {
   name: string
   playerNumber: number
   totalPlayers: number
+  target: number
   onReady: () => void
 }) {
   return (
@@ -24,7 +25,7 @@ export default function PassDevice({
         <span className="text-[var(--color-splat)]">{name}</span>
       </h2>
       <p className="mt-4 max-w-xs text-sm text-[var(--fg-muted)]">
-        Pick 3 movies whose Tomatometer scores add up as close to {TARGET} as you can - without
+        Pick 3 movies whose Tomatometer scores add up as close to {target} as you can - without
         seeing the scores. Everyone reveals at the end.
       </p>
       <button type="button" className="fg-btn fg-btn-primary mt-7 px-8 py-4" onClick={onReady}>
